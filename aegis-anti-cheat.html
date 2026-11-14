@@ -93,6 +93,13 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
 .checkout input[type=email]:focus{outline:0;border-color:#34e0b8}
 .checkout .go{width:100%;font:inherit;font-weight:600;padding:13px;border-radius:12px;border:1px solid #eef2f7;background:#eef2f7;color:#05080b;cursor:pointer}
 .checkout .go:disabled{opacity:.5;cursor:default}
+.checkout .go.alt{background:transparent;color:#eef2f7;border-color:#2a323d;margin-top:10px}
+.checkout .go.alt:hover:not(:disabled){border-color:#9aa4b2}
+.checkout input[readonly]{cursor:default;color:#c9d1db}
+.checkout #g-wrap{min-height:44px;margin:-6px 0 16px}
+.checkout #g-wrap p{font-size:13px;color:#aab3bf;margin:6px 0 0}
+.checkout .out{display:block;margin:-8px 0 16px;background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:#8d97a5;cursor:pointer;text-decoration:underline}
+.checkout .out:hover{color:#fff}
 .checkout .fine{font-size:12px;color:#6f7a88;margin-top:12px;line-height:1.5}
 .checkout .total{display:flex;justify-content:space-between;font-size:14px;color:#8d97a5;margin:-8px 0 18px}
 
@@ -252,12 +259,15 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
     <div id="checkout" class="checkout" hidden>
       <button class="back" type="button">&larr; Change tier</button>
       <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-      <label for="buyer-email">Email for your licence and receipt</label>
-      <input id="buyer-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <label for="buyer-email">Your Google account (your receipt and licence details are sent here)</label>
+      <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in with Google below">
+      <div id="g-wrap"><div id="g-btn"></div></div>
+      <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
       <div class="total"><span>Total (USD)</span><span id="sel-total"></span></div>
       <button class="go" id="go" type="button">Continue to PayPal</button>
       <div id="pp" hidden></div>
-      <p class="fine">You will pay securely through PayPal. Card payments are available at PayPal checkout without a PayPal account.</p>
+      <button class="go alt" id="inv" type="button">Email me a PayPal invoice instead</button>
+      <p class="fine">Sign-in is handled by Google and payment by PayPal, so we never see your passwords or card details. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your Google address and you pay it on paypal.com.</p>
       <p class="msg" id="msg" role="status"></p>
     </div>
   </div>
@@ -267,13 +277,16 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
    1) Paste your PayPal Client ID below (developer.paypal.com > Apps & Credentials). Sandbox ID to test, Live ID for real money.
    2) Edit TIERS / SPEED / FEATURES to change names, prices, detection times or the feature list.
       In FEATURES each row is [label, [4 values], optional [4 bracket tags], optional [4 hover explanations]]: use '✓' for included, '' for not included, or text. */
-var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
+var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';   /* the Client ID is meant to be public; NEVER put your PayPal Secret in this file */
+var API_BASE='';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
+var GOOGLE_CLIENT_ID='YOUR_GOOGLE_CLIENT_ID';   /* Google Cloud Console > APIs & Services > Credentials > OAuth client ID (type: Web). Like the PayPal Client ID it is meant to be public. Add this site's address under "Authorized JavaScript origins". */
+var OFFER_INVOICE=true;   /* true = also show "Email me a PayPal invoice instead". false = card/PayPal checkout only. */
 var CURRENCY='USD';
 var TIERS=[
-  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:4},
-  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:5},
-  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:6},
-  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:8}
+  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'tetra'},
+  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'octa'},
+  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'cube'},
+  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'icosa'}
 ];
 /* Row = [label, [4 values], optional [4 small tags shown in brackets after the label], optional [4 hover explanations]] */
 var FEATURES=[
@@ -330,43 +343,63 @@ var FEATURES=[
     'Priority: your tickets are answered ahead of standard ones.',
     'Dedicated: a named contact or direct channel for your network.']]
 ];
-/* Shapes: a flat 2D polygon per tier (Starter 4 points, Standard 5, Plus 6, Network 8). Every 10 seconds the points pop in, join up,
-   the shape spins, then the lines pull back and the points retract and vanish, and it starts again. Change shape:N on a tier for N points. */
+/* Shapes: a 3D solid per tier, one with more corners each time: Starter = tetrahedron (4 points), Standard = octahedron (6), Plus = cube (8), Network = icosahedron (12).
+   Every cycle the points pop in, the edges join them up, the solid spins in 3D, then the lines pull back and the points retract and vanish, and it starts again.
+   Set shape:'tetra'|'octa'|'cube'|'icosa' on a tier to change its solid. */
 var POLYS=[];
+function solid(kind){
+  var V=[],i,j,m,ph=(1+Math.sqrt(5))/2;
+  if(kind==='tetra') V=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];
+  else if(kind==='octa') V=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  else if(kind==='cube') for(i=0;i<8;i++) V.push([(i&1)?1:-1,(i&2)?1:-1,(i&4)?1:-1]);
+  else { var q=[[0,1,ph],[0,-1,ph],[0,1,-ph],[0,-1,-ph]]; q.forEach(function(v){ V.push(v,[v[1],v[2],v[0]],[v[2],v[0],v[1]]); }); }
+  V=V.map(function(v){ var l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]); return [v[0]/l,v[1]/l,v[2]/l]; });
+  function dist(a,b){ return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2)+Math.pow(a[2]-b[2],2)); }
+  m=9; for(i=0;i<V.length;i++) for(j=i+1;j<V.length;j++) m=Math.min(m,dist(V[i],V[j]));
+  var E=[]; for(i=0;i<V.length;i++) for(j=i+1;j<V.length;j++) if(dist(V[i],V[j])<m*1.02) E.push([i,j]);
+  return {V:V,E:E}; }
 function polyInit(card,t){
-  var cv=card.querySelector('.shape canvas'), S=96, C=S/2, dpr=Math.min(window.devicePixelRatio||1,2), ctx=cv.getContext('2d'), n=t.shape, V=[], i,
-      pc=[1,3,5].map(function(k){ return parseInt(t.color.substr(k,2),16); }), col='rgb('+pc.join(',')+')';
+  var cv=card.querySelector('.shape canvas'), S=96, C=S/2, dpr=Math.min(window.devicePixelRatio||1,2), ctx=cv.getContext('2d'), so=solid(t.shape), V=so.V, E=so.E, n=V.length, m=E.length,
+      pc=[1,3,5].map(function(k){ return parseInt(t.color.substr(k,2),16); }), col='rgb('+pc.join(',')+')', R=29;
   cv.width=S*dpr; cv.height=S*dpr;
-  for(i=0;i<n;i++){ var an=-Math.PI/2+i*2*Math.PI/n; V.push(n===4?[[-1.15,-.72],[1.15,-.72],[1.15,.72],[-1.15,.72]][i]:[Math.cos(an),Math.sin(an)]); }
-  var R=n===4?27:33;
   function ez(x){ x=x<0?0:x>1?1:x; return 1-Math.pow(1-x,3); }
   function draw(tm,calm){
-    var ang=calm?0:1.5*Math.max(0,tm-4.6), ca=Math.cos(ang), sa=Math.sin(ang), P=[], j, k, r, x, y;
+    var yaw=.6+(calm?0:1.4*Math.max(0,tm-4.6)), pit=.55+(calm?0:.25*Math.sin(Math.max(0,tm-4.6)*.8)), cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pit), sp=Math.sin(pit), P=[], j, r, x, y, z, k, L=[], D=[];
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S,S);
-    for(j=0;j<n;j++){ r=calm?1:1-ez((tm-8.5-j*.08)/.7); x=V[j][0]*R*r; y=V[j][1]*R*r; P.push([C+x*ca-y*sa,C+x*sa+y*ca,r,calm?1:ez((tm-j*(1.6/n))/.45)]); }
-    ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.shadowColor=col; ctx.shadowBlur=8;
-    for(j=0;j<n;j++){ var a2=P[j], b2=P[(j+1)%n], fr=calm?1:ez((tm-2.4-j*(1.5/n))/.7)*(1-ez((tm-7.2-(n-1-j)*(.7/n))/.7));
-      if(fr<=.001) continue; ctx.beginPath(); ctx.moveTo(a2[0],a2[1]); ctx.lineTo(a2[0]+(b2[0]-a2[0])*fr,a2[1]+(b2[1]-a2[1])*fr); ctx.stroke(); }
+    for(j=0;j<n;j++){ r=calm?1:1-ez((tm-8.5-j*(.5/n))/.7); x=V[j][0]*r; y=V[j][1]*r; z=V[j][2]*r;
+      var x2=x*cy+z*sy, z2=-x*sy+z*cy, y2=y*cp-z2*sp, z3=y*sp+z2*cp; k=4/(4-z3);
+      P.push({x:C+x2*R*k,y:C+y2*R*k,z:z3,r:r,pa:calm?1:ez((tm-j*(1.6/n))/.45),k:k}); }
+    for(j=0;j<m;j++){ var a2=P[E[j][0]], b2=P[E[j][1]], fr=calm?1:ez((tm-2.4-j*(1.5/m))/.7)*(1-ez((tm-7.2-(m-1-j)*(.7/m))/.7));
+      if(fr>.001) L.push({a:a2,b:b2,fr:fr,d:(a2.z+b2.z)/2}); }
+    L.sort(function(u,v){ return u.d-v.d; });
+    ctx.lineCap='round'; ctx.strokeStyle=col; ctx.shadowColor=col; ctx.shadowBlur=6;
+    for(j=0;j<L.length;j++){ var q=L[j]; ctx.globalAlpha=.35+.65*(q.d+1)/2; ctx.lineWidth=1.3+.9*(q.d+1)/2;
+      ctx.beginPath(); ctx.moveTo(q.a.x,q.a.y); ctx.lineTo(q.a.x+(q.b.x-q.a.x)*q.fr,q.a.y+(q.b.y-q.a.y)*q.fr); ctx.stroke(); }
     ctx.shadowBlur=0;
-    for(j=0;j<n;j++){ var pp=P[j], sz=3.4*pp[3]*pp[2]; if(sz<=.05) continue;
-      ctx.fillStyle='rgba('+pc.join(',')+','+(.25*pp[2])+')'; ctx.beginPath(); ctx.arc(pp[0],pp[1],sz*2.3,0,6.283); ctx.fill();
-      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(pp[0],pp[1],sz,0,6.283); ctx.fill(); }
+    for(j=0;j<n;j++) D.push(P[j]); D.sort(function(u,v){ return u.z-v.z; });
+    for(j=0;j<n;j++){ var pp=D[j], sz=3.2*pp.pa*pp.r*pp.k; if(sz<=.05) continue; ctx.globalAlpha=.45+.55*(pp.z+1)/2;
+      ctx.fillStyle='rgba('+pc.join(',')+','+(.3*pp.r)+')'; ctx.beginPath(); ctx.arc(pp.x,pp.y,sz*2.2,0,6.283); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(pp.x,pp.y,sz,0,6.283); ctx.fill(); }
+    ctx.globalAlpha=1;
   }
   POLYS.push(draw); draw(5,true);
 }
 (function(){
+  var BUILD=1.2, CYCLE=10-(4.6-BUILD);   /* BUILD = seconds for the points to appear and join up (was 4.6). Lower = faster. */
   var d=document.getElementById('buy'), t0=0, was=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function loop(ts){ requestAnimationFrame(loop);
     if(!d||!d.open){ was=false; return; }
     if(!was){ was=true; t0=ts; }
-    var tm=((ts-t0)/1000)%10; for(var i=0;i<POLYS.length;i++) POLYS[i](tm,still); }
+    var r=((ts-t0)/1000)%CYCLE, tm=r<BUILD?r*(4.6/BUILD):r+(4.6-BUILD);   /* build phase (points + edges) is squeezed from 4.6s into BUILD seconds */
+    for(var i=0;i<POLYS.length;i++) POLYS[i](tm,still); }
   requestAnimationFrame(loop);
 })();
 
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
   var list=document.getElementById('tiers'), box=document.getElementById('checkout'), ttl=document.getElementById('buy-title'),
-      pp=document.getElementById('pp'), msg=document.getElementById('msg'), go=document.getElementById('go'), email=document.getElementById('buyer-email'), btns=null, sdkP=null;
+      pp=document.getElementById('pp'), msg=document.getElementById('msg'), go=document.getElementById('go'), inv=document.getElementById('inv'), gbtn=document.getElementById('g-btn'), gwrap=document.getElementById('g-wrap'), gout=document.getElementById('g-out'),
+      email=document.getElementById('buyer-email'), btns=null, sdkP=null, gP=null, gInit=false, cred='', expired=false;
   function money(v){ return '$'+v.toFixed(2).replace('.00',''); }
   function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
   TIERS.forEach(function(t,i){
@@ -380,10 +413,31 @@ function polyInit(card,t){
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
     list.appendChild(el); polyInit(el,t); });
-  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
+  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth();
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
     document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
+  /* ---- Google sign-in (Google's own button; we only ever receive a signed token, never a password) ---- */
+  function syncAuth(){ var ok=!!cred; go.disabled=!ok; inv.disabled=!ok; email.value=ok?email.value:''; gbtn.hidden=ok; gout.hidden=!ok; }
+  function who(tok){ try{ var b=tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(b)))).email||''; }catch(e){ return ''; } }   /* display only: the server re-checks the token with Google */
+  function onGoogle(r){ cred=r&&r.credential||''; expired=false; email.value=cred?who(cred):''; if(!email.value) cred=''; msg.textContent=''; syncAuth(); }
+  function gsi(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve();
+    if(!gP) gP=new Promise(function(ok,no){ var s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.async=true;
+      s.onload=ok; s.onerror=function(){ gP=null; no(); }; document.head.appendChild(s); });
+    return gP; }
+  function showGoogle(){
+    if(GOOGLE_CLIENT_ID.indexOf('YOUR_')===0){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
+    gsi().then(function(){
+      if(!gInit){ google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:false,cancel_on_tap_outside:true}); gInit=true; }
+      gbtn.innerHTML=''; google.accounts.id.renderButton(gbtn,{theme:'filled_black',size:'large',text:'signin_with',shape:'pill',width:280});
+    }).catch(function(){ gbtn.innerHTML='<p>Could not load Google sign-in. Check your connection and reload.</p>'; });
+  }
+  gout.addEventListener('click',function(){ cred=''; email.value=''; try{ google.accounts.id.disableAutoSelect(); }catch(e){} syncAuth(); showGoogle(); });
+  function finish(html){   /* hide the form, show the final message */
+    pp.innerHTML=''; pp.hidden=true; go.hidden=true; inv.hidden=true; gwrap.hidden=true; gout.hidden=true;
+    document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
+    document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true;
+    msg.innerHTML=html; }
   function sdk(){ if(window.paypal) return Promise.resolve();
     if(!sdkP) sdkP=new Promise(function(ok,no){ var s=document.createElement('script');
       s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+CURRENCY+'&intent=capture';
@@ -392,26 +446,41 @@ function polyInit(card,t){
   var cur=-1;
   function pick(i){ cur=i; var t=TIERS[i];
     list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; pp.hidden=true; msg.innerHTML='';
-    go.hidden=false; go.disabled=false; email.disabled=false;
+    go.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth(); if(!cred) showGoogle();
     document.getElementById('sel-name').textContent='Aegis-Anti-Cheat \u2014 '+t.name+'';
     document.getElementById('sel-price').textContent=money(t.price); document.getElementById('sel-total').textContent=money(t.price); }
   function startPay(){ var t=TIERS[cur], label='Aegis-Anti-Cheat \u2014 '+t.name+'', addr=email.value.trim();
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)){ msg.textContent='Please enter a valid email address.'; email.focus(); return; }
-    if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
-    go.disabled=true; email.disabled=true; msg.textContent='Loading secure checkout\u2026';
-    sdk().then(function(){ msg.textContent=''; go.hidden=true; pp.hidden=false;
+    if(!cred){ msg.textContent='Please sign in with Google first.'; return; }
+    if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
+    go.disabled=true; inv.disabled=true; msg.textContent='Loading secure checkout\u2026';
+    sdk().then(function(){ msg.textContent=''; go.hidden=true; inv.hidden=true; gout.hidden=true; pp.hidden=false;
       btns=paypal.Buttons({
-        style:{layout:'vertical',color:'gold',shape:4,label:'paypal'},
-        createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,custom_id:t.name+'|'+addr,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
-        onApprove:function(data,a){ return a.order.capture().then(function(o){
-          pp.innerHTML=''; pp.hidden=true; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
-          document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true;
-          msg.innerHTML='<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+o.id+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your next steps.'; }); },
+        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+        createOrder:function(data,a){
+          return fetch(API_BASE+'/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred})})
+            .then(function(r){ if(r.status===401){ expired=true; throw new Error('signin'); } if(!r.ok) throw new Error('order'); return r.json(); }).then(function(o){ return o.id; }); },
+        onApprove:function(data,a){
+          var cap=fetch(API_BASE+'/api/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID})})
+                .then(function(r){ if(!r.ok) throw new Error('capture'); return r.json(); }).then(function(o){ if(o.status!=='COMPLETED') throw new Error('status'); return {id:o.id||data.orderID}; });
+          return cap.then(function(o){
+            finish('<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+String(o.id).replace(/</g,'&lt;')+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your payment details, then your licence and next steps.'); }); },
         onCancel:function(){ msg.textContent='Payment cancelled. You have not been charged.'; },
-        onError:function(){ msg.innerHTML='Something went wrong with PayPal. You have not been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; }
+        onError:function(){ if(expired){ cred=''; syncAuth(); try{ btns.close(); }catch(e){} pp.innerHTML=''; pp.hidden=true; go.hidden=false; gout.hidden=true; showGoogle(); msg.textContent='Your Google sign-in expired. Please sign in again.'; return; }
+          msg.innerHTML='Something went wrong with PayPal. You have not been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; }
       }); btns.render('#pp');
-    }).catch(function(){ go.disabled=false; email.disabled=false; go.hidden=false; msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
+    }).catch(function(){ syncAuth(); go.hidden=false; inv.hidden=!OFFER_INVOICE; gout.hidden=false; msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
   }
+  function sendInvoice(){ var t=TIERS[cur], addr=email.value.trim();
+    if(!cred){ msg.textContent='Please sign in with Google first.'; return; }
+    if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
+    go.disabled=true; inv.disabled=true; msg.textContent='Sending your PayPal invoice\u2026';
+    fetch(API_BASE+'/api/request-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred})})
+      .then(function(r){ if(r.status===401){ cred=''; syncAuth(); showGoogle(); throw new Error('signin'); } if(!r.ok) throw new Error('invoice'); return r.json(); })
+      .then(function(o){ if(o.status!=='INVOICE_SENT') throw new Error('status');
+        finish('<b style="color:#fff;font-size:18px">Invoice sent \u2014 check your email</b><br>PayPal has emailed an invoice for Aegis-Anti-Cheat \u2014 '+esc(t.name)+' to '+esc(addr)+'. Open it and pay on paypal.com (with PayPal, or by card without an account). Once it is paid we will email you the payment details, then your licence and next steps.'); })
+      .catch(function(e){ syncAuth(); if(String(e.message)==='signin') msg.textContent='Your Google sign-in expired. Please sign in again.'; else msg.innerHTML='Could not send the invoice. Nothing has been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; });
+  }
+  inv.addEventListener('click',sendInvoice);
   document.getElementById('buy-open').addEventListener('click',function(){ reset(); d.showModal(); });
   list.addEventListener('click',function(e){ var b=e.target.closest('.pick'); if(b) pick(+b.dataset.i); });
   d.querySelector('.back').addEventListener('click',reset);
