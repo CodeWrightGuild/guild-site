@@ -109,9 +109,9 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
 .tier .shape{position:absolute;top:16px;right:16px;width:46px;height:46px;color:var(--c);opacity:.28;transition:opacity .3s;pointer-events:none}
 .tier:hover .shape{opacity:1}
 .tier .shape svg{width:100%;height:100%;overflow:visible;transform-origin:50% 50%}
-.tier:hover .shape.spin svg{animation:tspin 5s linear infinite}
-.tier:hover .shape.pulse svg{animation:tpulse 1.6s ease-in-out infinite}
-.tier:hover .shape.flip svg{animation:tflip 3.2s ease-in-out infinite}
+.tier:hover .shape.rect svg{animation:tpulse 1.8s ease-in-out infinite}
+.tier:hover .shape.pent svg{animation:tspin 7s linear infinite}
+.tier:hover .shape.hex svg{animation:tspin 10s linear infinite reverse}
 @keyframes tspin{to{transform:rotate(360deg)}}
 @keyframes tpulse{0%,100%{transform:scale(.85)}50%{transform:scale(1.15)}}
 @keyframes tflip{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.12)}}
@@ -270,14 +270,19 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
 var CURRENCY='USD';
 var TIERS=[
-  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'pulse'},
-  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'spin'},
-  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'flip'},
-  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'spin'}
+  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'rect'},
+  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'pent'},
+  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'hex'},
+  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'tess'}
 ];
 /* Row = [label, [4 values], optional [4 small tags shown in brackets after the label], optional [4 hover explanations]] */
 var FEATURES=[
-  ['Full detection, all cheats',['\u2713','\u2713','\u2713','\u2713'],['60s','45s','30s','Instant']],
+  ['Full detection, all cheats',['\u2713','\u2713','\u2713','\u2713'],['60s','45s','30s','Instant'],[
+    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Starter, a verdict arrives within about 60 seconds of the suspicious behaviour, so a cheater can keep playing for up to a minute before action is taken.',
+    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Standard, a verdict arrives within about 45 seconds of the suspicious behaviour.',
+    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Plus, a verdict arrives within about 30 seconds of the suspicious behaviour, so cheaters are dealt with quickly.',
+    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Network, the verdict is instant: the player is judged the moment the behaviour is seen, so a cheater is stopped almost immediately.'
+  ]],
   ['Alert-only and auto-punish modes',['\u2713','\u2713','\u2713','\u2713']],
   ['Sensitivity presets and thresholds',['\u2713','\u2713','\u2713','\u2713']],
   ['In-game and Discord alerts',['\u2713','\u2713','\u2713','\u2713']],
@@ -290,11 +295,39 @@ var FEATURES=[
   ['Multi-server management, shared flags',['','','','\u2713']],
   ['Support',['Community','Ticket','Priority','Dedicated']]
 ];
-var SHAPES={
-  pulse:'<circle cx="23" cy="23" r="17" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="23" cy="23" r="6" fill="currentColor"/>',
-  spin:'<polygon points="23,4 42,38 4,38" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>',
-  flip:'<rect x="9" y="9" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="2.5" transform="rotate(45 23 23)"/>'
-};
+/* Shapes: Starter = rectangle, Standard = pentagon, Plus = hexagon (each with all its diagonals), Network = rotating 4D tesseract */
+function polyShape(n){
+  var P=[],i,j,out='',R=19,cx=23,cy=23;
+  if(n===4){ P=[[5,12],[41,12],[41,34],[5,34]]; }
+  else for(i=0;i<n;i++){ var an=-Math.PI/2+i*2*Math.PI/n; P.push([cx+R*Math.cos(an),cy+R*Math.sin(an)]); }
+  for(i=0;i<n;i++) for(j=i+2;j<n;j++){ if(i===0&&j===n-1) continue;
+    out+='<line x1="'+P[i][0].toFixed(1)+'" y1="'+P[i][1].toFixed(1)+'" x2="'+P[j][0].toFixed(1)+'" y2="'+P[j][1].toFixed(1)+'" stroke="currentColor" stroke-width="1" opacity=".45"/>'; }
+  out+='<polygon points="'+P.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ')+'" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>';
+  P.forEach(function(p){ out+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.2" fill="currentColor"/>'; });
+  return out; }
+var TESS_V=[],TESS_E=[];
+(function(){ var i,j,d; for(i=0;i<16;i++) TESS_V.push([(i&1)?1:-1,(i&2)?1:-1,(i&4)?1:-1,(i&8)?1:-1]);
+  for(i=0;i<16;i++) for(j=i+1;j<16;j++){ d=i^j; if(d===1||d===2||d===4||d===8) TESS_E.push([i,j]); } })();
+function tessShape(){ var o='',k; for(k=0;k<TESS_E.length;k++) o+='<line stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>'; return o; }
+function tessDraw(svg,t){
+  var lines=svg.querySelectorAll('line'), P=[], i, v, x, y, z, w, c, s2, q, k;
+  for(i=0;i<16;i++){ v=TESS_V[i]; x=v[0]; y=v[1]; z=v[2]; w=v[3];
+    c=Math.cos(t); s2=Math.sin(t); q=x*c-w*s2; w=x*s2+w*c; x=q;                 /* rotate in the X-W plane */
+    c=Math.cos(t*.7); s2=Math.sin(t*.7); q=y*c-w*s2; w=y*s2+w*c; y=q;          /* rotate in the Y-W plane */
+    c=Math.cos(t*.45); s2=Math.sin(t*.45); q=z*c-w*s2; w=z*s2+w*c; z=q;        /* rotate in the Z-W plane */
+    c=Math.cos(t*.3); s2=Math.sin(t*.3); q=x*c-z*s2; z=x*s2+z*c; x=q;          /* plain 3D turn */
+    k=1/(2.6-w); x*=k; y*=k; z*=k; k=1/(3.4-z); P.push([23+x*k*48,23+y*k*48]); }
+  for(i=0;i<TESS_E.length;i++){ var a=P[TESS_E[i][0]], b2=P[TESS_E[i][1]], l=lines[i];
+    l.setAttribute('x1',a[0].toFixed(2)); l.setAttribute('y1',a[1].toFixed(2)); l.setAttribute('x2',b2[0].toFixed(2)); l.setAttribute('y2',b2[1].toFixed(2)); } }
+function tessInit(card){
+  var svg=card.querySelector('.shape svg'), t=.9, last=0, run=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  tessDraw(svg,t);
+  function loop(ts){ if(!run) return; t+=Math.min((ts-last)/1000,.05)*.8; last=ts; tessDraw(svg,t); requestAnimationFrame(loop); }
+  card.addEventListener('mouseenter',function(){ if(still||run) return; run=true; last=performance.now(); requestAnimationFrame(loop); });
+  card.addEventListener('mouseleave',function(){ run=false; });
+}
+var SHAPES={rect:polyShape(4),pent:polyShape(5),hex:polyShape(6),tess:tessShape()};
+
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
   var list=document.getElementById('tiers'), box=document.getElementById('checkout'), ttl=document.getElementById('buy-title'),
@@ -311,7 +344,7 @@ var SHAPES={
     el.innerHTML='<span class="shape '+t.shape+'" aria-hidden="true"><svg viewBox="0 0 46 46">'+SHAPES[t.shape]+'</svg></span>'
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
-    list.appendChild(el); });
+    list.appendChild(el); if(t.shape==='tess') tessInit(el); });
   function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
