@@ -106,9 +106,9 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
 .tier:hover{border-color:var(--c);box-shadow:0 18px 44px -22px var(--c);background:radial-gradient(120% 60% at 100% 0%,color-mix(in srgb,var(--c) 16%,transparent),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015)),#07080a}
 .tier small{color:var(--c);opacity:.85}
 .tier:hover h3{color:var(--c)}
-.tier .shape{position:absolute;top:12px;right:12px;width:84px;height:84px;color:var(--c);opacity:.28;transition:opacity .3s;pointer-events:none}
+.tier .shape{position:absolute;top:8px;right:8px;width:96px;height:96px;color:var(--c);opacity:.8;transition:opacity .3s;pointer-events:none}
 .tier:hover .shape{opacity:1}
-.tier .shape svg{width:100%;height:100%;overflow:visible;transform-origin:50% 50%}
+.tier .shape canvas{width:100%;height:100%;display:block}
 .tier:hover .shape.rect svg{animation:tpulse 1.8s ease-in-out infinite}
 .tier:hover .shape.pent svg{animation:tspin 7s linear infinite}
 .tier:hover .shape.hex svg{animation:tspin 10s linear infinite reverse}
@@ -270,13 +270,14 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
 var CURRENCY='USD';
 var TIERS=[
-  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:2},
-  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:3},
-  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:4},
-  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:5}
+  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'sword'},
+  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'axe'},
+  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'spear'},
+  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'mace'}
 ];
 /* Row = [label, [4 values], optional [4 small tags shown in brackets after the label], optional [4 hover explanations]] */
 var FEATURES=[
+  ['Servers per licence',['1 server','2 servers','5 servers','10 servers'],[],['Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. This is the highest limit, built for networks.']],
   ['Full detection, all cheats',['\u2713','\u2713','\u2713','\u2713'],['60s','45s','30s','Instant'],[
     'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Starter, a verdict arrives within about 60 seconds of the suspicious behaviour, so a cheater can keep playing for up to a minute before action is taken.',
     'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Standard, a verdict arrives within about 45 seconds of the suspicious behaviour.',
@@ -295,30 +296,77 @@ var FEATURES=[
   ['Multi-server management, shared flags',['','','','\u2713']],
   ['Support',['Community','Ticket','Priority','Dedicated']]
 ];
-/* Shapes: one hypercube per tier, one dimension higher each time: Starter = square (2D), Standard = cube (3D), Plus = tesseract (4D), Network = penteract (5D).
-   Set shape:2..6 on a tier to change its dimension. Drawn still, and rotating through every dimension while the card is hovered. */
-function cubeEdges(n){ var E=[],N=1<<n,i,j,d,b; for(i=0;i<N;i++) for(b=0;b<n;b++){ j=i^(1<<b); if(j>i) E.push([i,j]); } return E; }
-function cubeProject(n,t,sc){
-  var N=1<<n,P=[],i,d,a,b,v,c,s2,q,k,pl=[],p=0;
-  for(a=0;a<n;a++) for(b=a+1;b<n;b++) pl.push([a,b,.55+((a*3+b*5)%7)*.11]);
-  for(i=0;i<N;i++){ v=[]; for(d=0;d<n;d++) v.push((i>>d)&1?1:-1);
-    for(p=0;p<pl.length;p++){ a=pl[p][0]; b=pl[p][1]; c=Math.cos(t*pl[p][2]); s2=Math.sin(t*pl[p][2]); q=v[a]*c-v[b]*s2; v[b]=v[a]*s2+v[b]*c; v[a]=q; }
-    for(d=n-1;d>=2;d--){ k=1/((d>2?2.6:3.4)-v[d]); for(a=0;a<d;a++) v[a]*=k; }
-    P.push([23+v[0]*sc,23+v[1]*sc]); }
-  return P; }
-function cubeFit(n){ var m=0,t,P,i; for(t=0;t<24;t+=.4){ P=cubeProject(n,t,1); for(i=0;i<P.length;i++) m=Math.max(m,Math.abs(P[i][0]-23),Math.abs(P[i][1]-23)); } return 20/m; }
-function cubeLines(n){ var o='',k,L=cubeEdges(n).length; for(k=0;k<L;k++) o+='<line stroke="currentColor" stroke-width="'+(n>=5?1.1:n===4?1.4:1.8)+'" stroke-linecap="round"/>'; return o; }
-function cubeDraw(svg,n,E,sc,t){ var P=cubeProject(n,t,sc), L=svg.querySelectorAll('line'), i;
-  for(i=0;i<E.length;i++){ var a=P[E[i][0]], b=P[E[i][1]];
-    L[i].setAttribute('x1',a[0].toFixed(2)); L[i].setAttribute('y1',a[1].toFixed(2)); L[i].setAttribute('x2',b[0].toFixed(2)); L[i].setAttribute('y2',b[1].toFixed(2)); } }
-function cubeInit(card,n){
-  var svg=card.querySelector('.shape svg'), E=cubeEdges(n), sc=cubeFit(n), t=.9, last=0, run=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  cubeDraw(svg,n,E,sc,t);
-  function loop(ts){ if(!run) return; t+=Math.min((ts-last)/1000,.05)*.8; last=ts; cubeDraw(svg,n,E,sc,t); requestAnimationFrame(loop); }
+/* Shapes: a spinning 3D voxel item per tier (Sword, Axe, Spear, Mace) turning on the vertical axis, with more orbiting particles on each higher tier.
+   Change shape:'sword'|'axe'|'spear'|'mace' on a tier to swap its item; PARTICLES sets how many sparkles each tier has. */
+var PARTICLES=[4,8,13,20];
+var IC={steel:'#c4ced8',wood:'#8b5a2b',dwood:'#5f3b1d',gold:'#e0a93b',dsteel:'#7f8996'};
+function buildSprite(kind){
+  var G=[],y,x,k,i;
+  for(y=0;y<16;y++){ G.push([]); for(x=0;x<16;x++) G[y].push(null); }
+  function P(x,y,c){ if(x>=0&&x<16&&y>=0&&y<16) G[y][x]=c; }
+  function handle(n,c){ for(k=0;k<n;k++) P(2+k,13-k,c); }
+  if(kind==='sword'){
+    for(k=0;k<8;k++){ P(6+k,9-k,IC.steel); if(k<7) P(7+k,9-k,IC.steel); } P(14,1,IC.steel);
+    for(i=0;i<5;i++) P(3+i,8+i,IC.gold);
+    P(4,11,IC.wood); P(3,12,IC.wood); P(2,13,IC.wood); P(1,14,IC.gold);
+  } else if(kind==='axe'){
+    handle(9,IC.wood);
+    [[10,2],[11,2],[12,2],[8,3],[9,3],[10,3],[11,3],[12,3],[7,4],[8,4],[9,4],[10,4],[11,4],[7,5],[8,5],[9,5],[8,6]].forEach(function(p){ P(p[0],p[1],IC.steel); });
+  } else if(kind==='spear'){
+    for(k=0;k<10;k++) P(1+k,14-k,IC.wood); P(10,5,IC.dwood);
+    for(k=0;k<4;k++){ P(11+k,4-k,IC.steel); if(k<3){ P(11+k,3-k,IC.steel); P(12+k,4-k,IC.steel); } } P(15,0,IC.steel);
+  } else {
+    handle(7,IC.dwood);
+    for(y=0;y<16;y++) for(x=0;x<16;x++) if((x-11)*(x-11)+(y-4)*(y-4)<=7) P(x,y,IC.dsteel);
+    [[11,0],[15,4],[7,4],[14,1],[8,1],[14,7]].forEach(function(p){ P(p[0],p[1],IC.steel); });
+    P(11,4,IC.gold);
+  }
+  return G; }
+function buildFaces(G){
+  var F=[],x,y,T=2,h=T/2;
+  function f(x,y){ return x>=0&&x<16&&y>=0&&y<16&&G[y][x]; }
+  for(y=0;y<16;y++) for(x=0;x<16;x++){ if(!G[y][x]) continue;
+    var rgb=[1,3,5].map(function(i){ return parseInt(G[y][x].substr(i,2),16); }), sh=1;
+    if(!f(x,y-1)||!f(x-1,y)) sh*=1.2; if(!f(x+1,y)||!f(x,y+1)) sh*=.78;
+    var col=rgb.map(function(v){ return Math.min(255,Math.round(v*sh)); }), cx=x-7.5, cy=y-7.5, l=cx-.5, r=cx+.5, tp=cy-.5, bt=cy+.5;
+    F.push({p:[[l,tp,h],[r,tp,h],[r,bt,h],[l,bt,h]],n:[0,0,1],c:col});
+    F.push({p:[[r,tp,-h],[l,tp,-h],[l,bt,-h],[r,bt,-h]],n:[0,0,-1],c:col});
+    if(!f(x-1,y)) F.push({p:[[l,tp,-h],[l,tp,h],[l,bt,h],[l,bt,-h]],n:[-1,0,0],c:col});
+    if(!f(x+1,y)) F.push({p:[[r,tp,h],[r,tp,-h],[r,bt,-h],[r,bt,h]],n:[1,0,0],c:col});
+    if(!f(x,y-1)) F.push({p:[[l,tp,-h],[r,tp,-h],[r,tp,h],[l,tp,h]],n:[0,-1,0],c:col});
+    if(!f(x,y+1)) F.push({p:[[l,bt,h],[r,bt,h],[r,bt,-h],[l,bt,-h]],n:[0,1,0],c:col});
+  }
+  return F; }
+function itemInit(card,t,tierIndex){
+  var cv=card.querySelector('.shape canvas'), S=96, dpr=Math.min(window.devicePixelRatio||1,2), ctx=cv.getContext('2d'),
+      F=buildFaces(buildSprite(t.shape)), SC=4.6, PIT=-.3, cp=Math.cos(PIT), sp=Math.sin(PIT), run=false, last=0, ang=.75, tm=1,
+      still=matchMedia('(prefers-reduced-motion: reduce)').matches,
+      pc=[1,3,5].map(function(i){ return parseInt(t.color.substr(i,2),16); }), parts=[], n=PARTICLES[tierIndex]||6, i;
+  cv.width=S*dpr; cv.height=S*dpr;
+  for(i=0;i<n;i++) parts.push({r:8.2+Math.random()*3,y:(Math.random()-.5)*15,sp:(.5+Math.random()*.9)*(Math.random()<.5?-1:1),a:Math.random()*6.283,sz:1+Math.random()*1.3,ph:Math.random()*6.283});
+  function draw(){
+    var ca=Math.cos(ang), sa=Math.sin(ang), L=[], j, q, p, d, X, Y, Z, x2, z2, y2;
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S,S);
+    function rot(x,y,z){ x2=x*ca+z*sa; z2=-x*sa+z*ca; y2=y*cp-z2*sp; return [x2,y2,y*sp+z2*cp]; }
+    for(j=0;j<F.length;j++){ q=F[j]; var nn=rot(q.n[0],q.n[1],q.n[2]); if(nn[2]<=.001) continue;
+      var pts=q.p.map(function(v){ return rot(v[0],v[1],v[2]); }); d=(pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
+      var b=.5+.5*Math.max(0,-.35*nn[0]-.55*nn[1]+.76*nn[2]);
+      L.push({d:d,pts:pts,col:'rgb('+Math.round(q.c[0]*b)+','+Math.round(q.c[1]*b)+','+Math.round(q.c[2]*b)+')'}); }
+    for(j=0;j<parts.length;j++){ p=parts[j]; var a=p.a+tm*p.sp, pp=rot(Math.cos(a)*p.r,p.y+Math.sin(tm*1.3+p.ph)*.9,Math.sin(a)*p.r); L.push({d:pp[2],pt:pp,p:p}); }
+    L.sort(function(u,v){ return u.d-v.d; });
+    for(j=0;j<L.length;j++){ q=L[j];
+      if(q.pts){ ctx.beginPath(); ctx.moveTo(S/2+q.pts[0][0]*SC,S/2+q.pts[0][1]*SC);
+        for(i=1;i<4;i++) ctx.lineTo(S/2+q.pts[i][0]*SC,S/2+q.pts[i][1]*SC);
+        ctx.closePath(); ctx.fillStyle=q.col; ctx.strokeStyle=q.col; ctx.lineWidth=.6; ctx.fill(); ctx.stroke(); }
+      else { var al=.45+.55*(.5+.5*Math.sin(tm*2+q.p.ph)), rr=q.p.sz*(1+q.pt[2]*.03), px=S/2+q.pt[0]*SC, py=S/2+q.pt[1]*SC;
+        ctx.fillStyle='rgba('+pc[0]+','+pc[1]+','+pc[2]+','+(al*.22)+')'; ctx.beginPath(); ctx.arc(px,py,rr*2.6,0,6.283); ctx.fill();
+        ctx.fillStyle='rgba('+Math.min(255,pc[0]+70)+','+Math.min(255,pc[1]+70)+','+Math.min(255,pc[2]+70)+','+al+')'; ctx.beginPath(); ctx.arc(px,py,rr,0,6.283); ctx.fill(); } }
+  }
+  draw();
+  function loop(ts){ if(!run) return; var dt=Math.min((ts-last)/1000,.05); last=ts; ang+=dt*1.7; tm+=dt; draw(); requestAnimationFrame(loop); }
   card.addEventListener('mouseenter',function(){ if(still||run) return; run=true; last=performance.now(); requestAnimationFrame(loop); });
   card.addEventListener('mouseleave',function(){ run=false; });
 }
-var SHAPES={2:cubeLines(2),3:cubeLines(3),4:cubeLines(4),5:cubeLines(5),6:cubeLines(6)};
 
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
@@ -333,10 +381,10 @@ var SHAPES={2:cubeLines(2),3:cubeLines(3),4:cubeLines(4),5:cubeLines(5),6:cubeLi
         +(tip&&!off?'<button class="info" type="button" aria-label="More info">i</button><span class="tip" role="tooltip">'+esc(tip)+'</span>':'')
         +'</span><span'+(v==='\u2713'?' class="ok"':'')+'>'+(off?'\u2014':esc(v))+'</span></li>'; }).join('');
     var el=document.createElement('article'); el.className='tier'; el.style.setProperty('--c',t.color);
-    el.innerHTML='<span class="shape" aria-hidden="true"><svg viewBox="0 0 46 46">'+SHAPES[t.shape]+'</svg></span>'
+    el.innerHTML='<span class="shape" aria-hidden="true"><canvas></canvas></span>'
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
-    list.appendChild(el); cubeInit(el,t.shape); });
+    list.appendChild(el); itemInit(el,t,i); });
   function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
@@ -358,7 +406,7 @@ var SHAPES={2:cubeLines(2),3:cubeLines(3),4:cubeLines(4),5:cubeLines(5),6:cubeLi
     go.disabled=true; email.disabled=true; msg.textContent='Loading secure checkout\u2026';
     sdk().then(function(){ msg.textContent=''; go.hidden=true; pp.hidden=false;
       btns=paypal.Buttons({
-        style:{layout:'vertical',color:'gold',shape:2,label:'paypal'},
+        style:{layout:'vertical',color:'gold',shape:'sword',label:'paypal'},
         createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,custom_id:t.name+'|'+addr,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
         onApprove:function(data,a){ return a.order.capture().then(function(o){
           pp.innerHTML=''; pp.hidden=true; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
