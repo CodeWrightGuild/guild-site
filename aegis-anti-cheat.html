@@ -13,11 +13,7 @@ html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#eef2f7;
   background:radial-gradient(75% 90% at 70% 48%,#1c222c 0%,#0b0d11 50%,#000 100%),#000;overflow:hidden;
   -webkit-font-smoothing:antialiased}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;
-  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.045) 45%,transparent 60%);
-  background-size:260% 100%;animation:sweep 14s ease-in-out infinite}
-@keyframes sweep{0%,100%{background-position:100% 0}50%{background-position:0 0}}
-#atom{position:fixed;inset:0;width:100%;height:100%}
+#bg{position:fixed;inset:0;width:100%;height:100%}
 nav{position:fixed;top:0;left:0;right:0;padding:22px 32px;z-index:2}
 nav a{color:#9aa4b2;text-decoration:none;font-size:14px;letter-spacing:.04em;transition:color .2s}
 nav a:hover{color:#fff}
@@ -37,11 +33,11 @@ p{font-size:19px;color:#8d97a5;margin-bottom:36px}
 .btn:hover{transform:translateY(-2px);border-color:#34e0b8;color:#34e0b8}
 .btn.solid{background:#eef2f7;color:#05080b;border-color:#eef2f7;box-shadow:0 8px 28px -10px rgba(255,255,255,.35)}
 .btn.solid:hover{color:#05080b;border-color:#fff}
-@media (max-width:760px){main{align-items:flex-end;padding-bottom:12vh}#atom{opacity:.55}}
-@media (prefers-reduced-motion:reduce){body::after,h1{animation:none}}
+@media (max-width:760px){main{align-items:flex-end;padding-bottom:12vh}}
+@media (prefers-reduced-motion:reduce){h1{animation:none}}
 </style></head>
 <body>
-<canvas id="atom" aria-hidden="true"></canvas>
+<canvas id="bg" aria-hidden="true"></canvas>
 <nav><a href="./#catalogue">&larr; Codewright Guild</a></nav>
 <main><div class="copy">
   <span class="eyebrow">Security &middot; Gaming</span>
@@ -53,45 +49,37 @@ p{font-size:19px;color:#8d97a5;margin-bottom:36px}
   </div>
 </div></main>
 <script>
+/* Flowing wave background: edit the numbers in R[] and the colours in draw() */
 (function(){
-  var c=document.getElementById('atom'), x=c.getContext('2d'), W=0,H=0,t=0,cx=0,cy=0,mx=0,my=0,tx=0,ty=0,last=0;
-  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, N=4;
-  function size(){var r=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*r;c.height=H*r;
-    x.setTransform(r,0,0,r,0,0);cx=W>760?W*.68:W/2;cy=W>760?H/2:H*.34;}
-  function P(a,k,S){
-    var px=Math.cos(a),py=Math.sin(a),th=k*Math.PI/N+t*.35,c1=Math.cos(th),s1=Math.sin(th);
-    var x1=px*c1,z1=-px*s1;
-    var ax=.55+.2*Math.sin(t*.3)+my*.5,c2=Math.cos(ax),s2=Math.sin(ax);
-    var y2=py*c2-z1*s2,z2=py*s2+z1*c2;
-    var az=t*.12+mx*.5,c3=Math.cos(az),s3=Math.sin(az);
-    var x3=x1*c3-y2*s3,y3=x1*s3+y2*c3,f=1/(1-z2*.3);
-    return{x:cx+x3*S*f,y:cy+y3*S*f,z:z2,f:f};}
-  function pass(front,S){
-    for(var k=0;k<N;k++){
-      var p0=P(0,k,S);
-      for(var i=1;i<=90;i++){var p1=P(i/90*6.2832,k,S);
-        if((p1.z>=0)===front){x.strokeStyle='rgba(215,226,238,'+(front?.6:.16)+')';x.lineWidth=front?1.4:.8;
-          x.beginPath();x.moveTo(p0.x,p0.y);x.lineTo(p1.x,p1.y);x.stroke();}
-        p0=p1;}
-      var e=P(t*(1.1+k*.3)+k*1.7,k,S);
-      if((e.z>=0)===front){var r=(front?11:8)*e.f,g=x.createRadialGradient(e.x,e.y,0,e.x,e.y,r*2.4);
-        g.addColorStop(0,'#fff');g.addColorStop(.25,'#34e0b8');g.addColorStop(1,'rgba(52,224,184,0)');
-        x.fillStyle=g;x.beginPath();x.arc(e.x,e.y,r*2.4,0,6.2832);x.fill();}
-    }}
+  var c=document.getElementById('bg'), x=c.getContext('2d'), W=0, H=0, t=0, last=0;
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches, R=[];
+  for(var i=0;i<7;i++) R.push({y:.5+i*.035, a:.07+.02*(i%3), f:1.3+i*.17, s:.25+i*.05, p:i*1.1, th:.05+.012*i, al:.07+.025*(i%4)});
+  function size(){ var r=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+    c.width=W*r; c.height=H*r; x.setTransform(r,0,0,r,0,0); }
+  function wy(r,u){ return H*r.y + H*r.a*Math.sin(u*3.1416*r.f + t*r.s + r.p) + H*r.a*.6*Math.cos(u*5*r.f*.5 - t*r.s*.7 + r.p*2); }
   function draw(){
-    x.clearRect(0,0,W,H);var S=Math.min(W,H)*.36;
-    var h=x.createRadialGradient(cx,cy,0,cx,cy,S*1.5);
-    h.addColorStop(0,'rgba(52,224,184,.14)');h.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=h;x.fillRect(0,0,W,H);
-    pass(false,S);
-    var n=S*.2*(1+.06*Math.sin(t*2)),g=x.createRadialGradient(cx,cy,0,cx,cy,n);
-    g.addColorStop(0,'#fff');g.addColorStop(.3,'rgba(150,255,230,.9)');g.addColorStop(1,'rgba(52,224,184,0)');
-    x.fillStyle=g;x.beginPath();x.arc(cx,cy,n,0,6.2832);x.fill();
-    pass(true,S);}
-  function loop(ts){var dt=Math.min((ts-last)/1000,.05);last=ts;t+=dt;
-    mx+=(tx-mx)*.05;my+=(ty-my)*.05;draw();requestAnimationFrame(loop);}
-  size();addEventListener('resize',size);
-  addEventListener('pointermove',function(e){tx=e.clientX/W-.5;ty=e.clientY/H-.5;});
-  if(reduce){t=1.2;draw();return;}
+    var k=(Math.sin(t*.15)+1)/2, a=Math.round(10+k*10), b=Math.round(24+k*14);
+    var g=x.createLinearGradient(0,0,W*(.6+.4*k),H);
+    g.addColorStop(0,'rgb('+a+','+a+','+(a+2)+')'); g.addColorStop(.5,'rgb('+b+','+b+','+(b+3)+')'); g.addColorStop(1,'rgb(3,3,4)');
+    x.globalCompositeOperation='source-over'; x.fillStyle=g; x.fillRect(0,0,W,H);
+    x.globalCompositeOperation='lighter';
+    for(var i=0;i<R.length;i++){
+      var r=R[i], fg=x.createLinearGradient(0,0,W,0), top=[], bot=[], step=8, u, y;
+      fg.addColorStop(0,'rgba(220,226,236,0)'); fg.addColorStop(.5,'rgba(220,226,236,'+r.al+')'); fg.addColorStop(1,'rgba(220,226,236,0)');
+      for(var px=0; px<=W+step; px+=step){ u=px/W; y=wy(r,u);
+        top.push([px,y]); bot.push([px, y+H*r.th*(.6+.4*Math.sin(u*7.5+t*.4+r.p))]); }
+      x.beginPath(); x.moveTo(top[0][0],top[0][1]);
+      for(var j=1;j<top.length;j++) x.lineTo(top[j][0],top[j][1]);
+      for(j=bot.length-1;j>=0;j--) x.lineTo(bot[j][0],bot[j][1]);
+      x.closePath(); x.fillStyle=fg; x.fill();
+      x.beginPath(); x.moveTo(top[0][0],top[0][1]);
+      for(j=1;j<top.length;j++) x.lineTo(top[j][0],top[j][1]);
+      x.strokeStyle='rgba(235,240,248,'+(r.al*2.2)+')'; x.lineWidth=1.2; x.stroke();
+    }
+  }
+  function loop(ts){ t+=Math.min((ts-last)/1000,.05); last=ts; draw(); requestAnimationFrame(loop); }
+  size(); addEventListener('resize',size);
+  if(reduce){ t=2; draw(); return; }
   requestAnimationFrame(loop);
 })();
 </script>
