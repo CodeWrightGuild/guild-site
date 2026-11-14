@@ -33,6 +33,11 @@ p{font-size:19px;color:#8d97a5;margin-bottom:36px}
 .btn.solid:hover{color:#05080b;border-color:#fff}
 @media (max-width:760px){main{align-items:flex-end;padding-bottom:12vh}}
 @media (prefers-reduced-motion:reduce){h1{animation:none}}
+main{justify-content:center;align-items:flex-end;padding:0 24px 8vh;text-align:center}
+.copy{max-width:640px}
+.btns{justify-content:center}
+h1{font-size:clamp(36px,5.2vw,64px);margin-bottom:16px}
+p{margin-bottom:28px}
 </style></head>
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
@@ -47,46 +52,55 @@ p{font-size:19px;color:#8d97a5;margin-bottom:36px}
   </div>
 </div></main>
 <script>
-/* Glass ribbon + particles (PS3 style, greyscale). Tweak: Rb[] (ribbons), NP (particle count), Q (quality) */
+/* PS3-style silk ribbon (greyscale). Tweak: shape in cyf()/hhf(), brightness in the alpha numbers, particles in the add() loops */
 (function(){
   var c=document.getElementById('bg'), x=c.getContext('2d',{alpha:false});
-  var w=0,h=0,n=0,t=0,last=0,GF,Y=[],P=[], Q=.75, STEP=10, NP=90;
+  var w=0,h=0,n=0,t=0,last=0,GF,BG,GL,Y=[],P=[], Q=.8, STEP=10, K=7, i;
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  /* b: start height (0 top..1 bottom)  s: how much it rises to the right  a: wave size  th: thickness  al: brightness  K: strands */
-  var Rb=[{b:.84,s:.55,a:.05,th:.055,al:1,ph:0,K:7},{b:.97,s:.5,a:.04,th:.03,al:.4,ph:2.2,K:4}];
-  for(var i=0;i<NP;i++) P.push({u:Math.random(),o:(Math.random()*2-1)*3,v:(Math.random()-.5)*.012,s:.5+Math.random()*1.2,ph:Math.random()*6.28});
-  function cyf(r,u){ return h*(r.b-r.s*u+r.a*Math.sin(u*5+t*.3+r.ph)+r.a*.7*Math.cos(u*9-t*.4+r.ph*2)); }
-  function hhf(r,u){ return h*(r.th*(.55+.45*Math.sin(u*3.2+t*.25+r.ph+1))+.004); }
+  function R(a,b){ return a+Math.random()*(b-a); }
+  function add(g,u,o,s,b,v){ P.push({g:g,u:u,u0:u,o:o,s:s,b:b,v:v,ph:R(0,6.28),x:R(0,1),y:R(0,1)}); }
+  for(i=0;i<70;i++) add(0,Math.pow(Math.random(),1.6)*.2,R(.1,1.7),R(.5,1.3),R(.5,1),0);   /* sparkle cluster, lower left */
+  for(i=0;i<14;i++) add(3,Math.pow(Math.random(),1.5)*.16,R(.2,1.5),R(3,6),R(.6,1),0);     /* soft bokeh dots */
+  for(i=0;i<55;i++) add(1,Math.random(),R(-1.8,2.6),R(.4,1),R(.3,.8),R(.002,.006));        /* drifting specks along the ribbon */
+  for(i=0;i<16;i++) add(2,0,0,R(.4,.9),R(.2,.5),0);                                         /* far-away specks */
+  function cyf(u){ var d=u-.47, k=d<0?.88:.5;                       /* centre line: arches up, peaks near the middle */
+    return h*(.37+k*d*d+.012*Math.sin(u*3.2-t*.35)+.008*Math.cos(u*5.1+t*.28)); }
+  function hhf(u){ return h*(.038+.085*Math.pow(1-u,3)+.03*u*u)*(1+.1*Math.sin(u*4-t*.3)); }  /* thick on the left, thin on the right */
+  function tau(u){ return 1.1*Math.sin(u*3-t*.22+.5)+.3*Math.sin(u*7+t*.15); }                /* twist: makes strands cross */
   function size(){
     w=Math.ceil(innerWidth*Q); h=Math.ceil(innerHeight*Q); c.width=w; c.height=h; n=Math.ceil(w/STEP)+2;
-    Y=[]; for(var k=0;k<9;k++) Y.push(new Float32Array(n));
-    GF=x.createLinearGradient(0,0,w,0); var col='rgba(215,219,226,';
-    GF.addColorStop(0,col+'0)'); GF.addColorStop(.1,col+'1)'); GF.addColorStop(.9,col+'1)'); GF.addColorStop(1,col+'0)');
+    Y=[]; for(var k=0;k<=K;k++) Y.push(new Float32Array(n));
+    var col='rgba(215,219,226,';
+    GF=x.createLinearGradient(0,0,w,0); GF.addColorStop(0,col+'1)'); GF.addColorStop(.45,col+'.62)'); GF.addColorStop(1,col+'.9)');
+    BG=x.createLinearGradient(0,0,0,h); BG.addColorStop(0,'#000'); BG.addColorStop(.74,'#000'); BG.addColorStop(1,'#1a1a1a');
+    GL=x.createRadialGradient(w*.035,h*.62,0,w*.035,h*.62,h*.22); GL.addColorStop(0,col+'.22)'); GL.addColorStop(1,col+'0)');
   }
   function strand(k){ x.beginPath(); x.moveTo(0,Y[k][0]); for(var j=1;j<n;j++) x.lineTo(j*STEP,Y[k][j]); x.stroke(); }
-  function ribbon(r){
-    var K=r.K,j,k,u,cy,hh,f;
-    for(j=0;j<n;j++){ u=j*STEP/w; cy=cyf(r,u); hh=hhf(r,u);
-      for(k=0;k<=K;k++){ f=k/K*2-1; Y[k][j]=cy+hh*f+hh*.18*Math.sin(u*7+t*.35+k*1.3+r.ph)*(1-Math.abs(f)); } }
+  function draw(dt){
+    var j,k,u,cy,hh,tw;
+    x.globalCompositeOperation='source-over'; x.globalAlpha=1; x.fillStyle=BG; x.fillRect(0,0,w,h);
+    x.globalCompositeOperation='lighter';
+    for(j=0;j<n;j++){ u=j*STEP/w; cy=cyf(u); hh=hhf(u); tw=tau(u);
+      for(k=0;k<=K;k++) Y[k][j]=cy+hh*Math.cos(k*Math.PI/K+tw)+hh*.05*Math.sin(u*9+t*.4+k*1.7); }
+    x.globalAlpha=.8+.2*Math.sin(t*.5); x.fillStyle=GL; x.fillRect(0,h*.3,w*.4,h*.6);
     x.fillStyle=GF;
-    for(k=0;k<K;k++){ x.globalAlpha=r.al*((k&1)?.26:.14);
+    for(k=0;k<K;k++){ x.globalAlpha=(k&1)?.15:.08;
       x.beginPath(); x.moveTo(0,Y[k][0]);
       for(j=1;j<n;j++) x.lineTo(j*STEP,Y[k][j]);
       for(j=n-1;j>=0;j--) x.lineTo(j*STEP,Y[k+1][j]);
       x.closePath(); x.fill(); }
-    x.strokeStyle=GF;
-    x.lineWidth=5; x.globalAlpha=r.al*.1; strand(0);               /* soft glow on top edge */
-    for(k=0;k<=K;k++){ x.lineWidth=k?.8:1.3; x.globalAlpha=r.al*(k==0?.85:k==K?.45:.2); strand(k); }
-  }
-  function draw(dt){
-    x.globalCompositeOperation='source-over'; x.globalAlpha=1; x.fillStyle='#000'; x.fillRect(0,0,w,h);
-    x.globalCompositeOperation='lighter';
-    for(var i=0;i<Rb.length;i++) ribbon(Rb[i]);
-    x.fillStyle='#dfe3ea'; var r=Rb[0];
-    for(i=0;i<P.length;i++){ var q=P[i]; q.u+=q.v*dt; if(q.u<0)q.u+=1; if(q.u>1)q.u-=1;
-      var px=q.u*w, py=cyf(r,q.u)+q.o*(hhf(r,q.u)+h*.025);
-      x.globalAlpha=(.2+.6*(.5+.5*Math.sin(t*.8+q.ph)))*.85;
-      x.beginPath(); x.arc(px,py,q.s,0,6.283); x.fill(); }
+    x.strokeStyle=GF; x.lineWidth=5; x.globalAlpha=.06; strand(0);
+    x.lineWidth=.8;
+    for(k=0;k<=K;k++){ x.globalAlpha=(k==0)?.38:(k==K)?.3:.17; strand(k); }
+    x.fillStyle='#e6e9ef';
+    for(i=0;i<P.length;i++){ var q=P[i], px, py, al=q.b*(.35+.65*(.5+.5*Math.sin(t*(.6+q.ph*.1)+q.ph)));
+      if(q.g===2){ px=(q.x+.01*Math.sin(t*.1+q.ph))*w; py=(.05+q.y*.9)*h; }
+      else { if(q.g===1){ q.u+=q.v*dt; if(q.u>1) q.u-=1; u=q.u; } else u=q.u0+.012*Math.sin(t*.3+q.ph);
+        px=u*w; py=cyf(u)+q.o*(hhf(u)+h*.012); }
+      x.beginPath();
+      if(q.g===3){ x.globalAlpha=al*.16; x.arc(px,py,q.s,0,6.283); x.fill(); x.beginPath(); x.globalAlpha=al*.5; x.arc(px,py,.9,0,6.283); }
+      else { x.globalAlpha=al; x.arc(px,py,q.s,0,6.283); }
+      x.fill(); }
     x.globalAlpha=1;
   }
   function loop(ts){ var dt=Math.min((ts-last)/1000,.05); last=ts; t+=dt; draw(dt); requestAnimationFrame(loop); }
