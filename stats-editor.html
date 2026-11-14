@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Statistics editor</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#eef2f7;font:15px/1.5 -apple-system,"Segoe UI",Roboto,sans-serif;padding:32px 20px 80px}
+.w{max-width:760px;margin:0 auto}
+h1{font-family:Georgia,serif;font-weight:600;margin:0 0 6px}
+p.s{color:#8d97a5;margin:0 0 24px}
+input{font:inherit;color:#eef2f7;background:#0b0e12;border:1px solid #2a323d;border-radius:8px;padding:9px 11px;min-width:0}
+input:focus{outline:0;border-color:#34e0b8}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid #2a323d;background:transparent;color:#eef2f7;padding:9px 14px}
+button:hover{border-color:#34e0b8;color:#34e0b8}
+button.go{background:#eef2f7;color:#05080b;border-color:#eef2f7}
+button.go:hover{color:#05080b;border-color:#34e0b8;background:#34e0b8}
+.top{display:grid;gap:10px;margin-bottom:22px}
+.top label{display:grid;gap:4px;font-size:13px;color:#8d97a5}
+.g{border:1px solid #232a33;border-radius:14px;padding:16px;margin-bottom:16px;background:#07080a}
+.gh{display:flex;gap:10px;margin-bottom:12px}
+.gh input{flex:1;font-weight:600}
+.r{display:grid;grid-template-columns:1fr 110px auto;gap:8px;margin-bottom:8px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;position:sticky;bottom:0;background:#000;padding:14px 0}
+.x{padding:9px 12px;color:#8d97a5}
+#st{color:#34e0b8;font-size:14px;align-self:center}
+</style></head><body><div class="w">
+<h1>Statistics editor</h1>
+<p class="s">Edit the numbers, press <b>Download stats.json</b>, then replace <code>stats.json</code> in your site folder or repo. The website reads that file.</p>
+<div class="top">
+  <label>Last updated<input id="upd" placeholder="2026-11-14"></label>
+  <label>Note under the table<input id="note" placeholder="Percentages show the share of flagged events attributed to each check."></label>
+</div>
+<div id="gs"></div>
+<div class="bar">
+  <button id="addg" type="button">+ Add strength</button>
+  <button class="go" id="dl" type="button">Download stats.json</button>
+  <button id="load" type="button">Load a stats.json file</button>
+  <input id="file" type="file" accept=".json,application/json" hidden>
+  <span id="st"></span>
+</div>
+</div>
+<script>
+var D={updated:'',note:'',strengths:[]};
+var gs=document.getElementById('gs'), st=document.getElementById('st');
+function today(){ return new Date().toISOString().slice(0,10); }
+function sync(){ D.updated=document.getElementById('upd').value; D.note=document.getElementById('note').value; }
+function draw(){
+  document.getElementById('upd').value=D.updated||''; document.getElementById('note').value=D.note||'';
+  gs.innerHTML='';
+  D.strengths.forEach(function(g,gi){
+    var box=document.createElement('div'); box.className='g';
+    var h=document.createElement('div'); h.className='gh';
+    var ln=document.createElement('input'); ln.value=g.label; ln.placeholder='Strength 1'; ln.oninput=function(){ g.label=ln.value; };
+    var dg=document.createElement('button'); dg.type='button'; dg.className='x'; dg.textContent='Remove strength'; dg.onclick=function(){ D.strengths.splice(gi,1); draw(); };
+    h.appendChild(ln); h.appendChild(dg); box.appendChild(h);
+    g.rows.forEach(function(r,ri){
+      var row=document.createElement('div'); row.className='r';
+      var n=document.createElement('input'); n.value=r.name; n.placeholder='Check name'; n.oninput=function(){ r.name=n.value; };
+      var v=document.createElement('input'); v.type='number'; v.step='0.1'; v.value=r.value; v.placeholder='%'; v.oninput=function(){ r.value=parseFloat(v.value)||0; };
+      var x=document.createElement('button'); x.type='button'; x.className='x'; x.textContent='\u00d7'; x.onclick=function(){ g.rows.splice(ri,1); draw(); };
+      row.appendChild(n); row.appendChild(v); row.appendChild(x); box.appendChild(row); });
+    var ar=document.createElement('button'); ar.type='button'; ar.textContent='+ Add check'; ar.onclick=function(){ sync(); g.rows.push({name:'',value:0}); draw(); };
+    box.appendChild(ar); gs.appendChild(box); });
+}
+document.getElementById('addg').onclick=function(){ sync(); D.strengths.push({label:'Strength '+(D.strengths.length+1),rows:[{name:'',value:0}]}); draw(); };
+document.getElementById('dl').onclick=function(){
+  sync(); if(!D.updated) D.updated=today();
+  var out={updated:D.updated,note:D.note,strengths:D.strengths.map(function(g){ return {label:g.label,rows:g.rows.filter(function(r){return r.name.trim();}).map(function(r){ return {name:r.name.trim(),value:+r.value}; })}; })};
+  var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'})); a.download='stats.json'; a.click();
+  st.textContent='Downloaded. Now replace stats.json on your site.';
+};
+document.getElementById('load').onclick=function(){ document.getElementById('file').click(); };
+document.getElementById('file').onchange=function(e){ var f=e.target.files[0]; if(!f) return; var r=new FileReader();
+  r.onload=function(){ try{ D=JSON.parse(r.result); D.strengths=D.strengths||[]; draw(); st.textContent='Loaded.'; }catch(x){ st.textContent='That file is not valid JSON.'; } }; r.readAsText(f); };
+fetch('stats.json?v='+Date.now(),{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ D=j; D.strengths=D.strengths||[]; draw(); })
+  .catch(function(){ D.strengths=[{label:'Strength 1',rows:[{name:'',value:0}]}]; draw(); st.textContent='Could not read stats.json here: use "Load a stats.json file".'; });
+</script></body></html>

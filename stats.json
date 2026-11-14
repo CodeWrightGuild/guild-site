@@ -1,0 +1,13 @@
+{
+  "updated": "2026-11-14",
+  "note": "Percentages show the share of flagged events attributed to each check.",
+  "strengths": [
+    {
+      "label": "Strength 2",
+      "rows": [
+        { "name": "TriggerBot", "value": 0.7 },
+        { "name": "KillAura", "value": -0.0 }
+      ]
+    }
+  ]
+}
