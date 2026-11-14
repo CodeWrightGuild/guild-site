@@ -9,15 +9,15 @@
 <title>Aegis-Anti-Cheat — Codewright Guild</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html,body{min-height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#eef2f7;
-  background:#000;overflow:hidden;
+  background:#000;overflow-x:hidden;
   -webkit-font-smoothing:antialiased}
-#bg{position:fixed;inset:0;width:100%;height:100%}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0}
 nav{position:fixed;top:0;left:0;right:0;padding:22px 32px;z-index:2}
 nav a{color:#9aa4b2;text-decoration:none;font-size:14px;letter-spacing:.04em;transition:color .2s}
 nav a:hover{color:#fff}
-main{position:relative;z-index:1;height:100%;display:flex;align-items:center;padding:0 clamp(24px,7vw,110px)}
+main{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;padding:0 clamp(24px,7vw,110px)}
 .copy{max-width:560px}
 .eyebrow{display:inline-block;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.16em;color:#34e0b8;
   padding:8px 15px;border:1px solid rgba(52,224,184,.3);border-radius:100px;background:rgba(52,224,184,.07);margin-bottom:26px}
@@ -72,6 +72,29 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
 .sel b{font-family:"Iowan Old Style",Georgia,serif;font-size:28px;font-weight:600}
 .checkout .msg{font-size:14.5px;line-height:1.55;color:#aab3bf;margin:14px 0 0}
 .checkout .msg a{color:#fff}
+
+.stats-sec{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:72px 24px 96px}
+.stats-sec h2{font-family:"Iowan Old Style",Georgia,serif;font-size:clamp(26px,3.4vw,38px);font-weight:600;text-align:center;margin-bottom:8px}
+.stats-sec .sub{text-align:center;font-size:15px;color:#8d97a5;margin:0 auto 26px;max-width:560px}
+.st-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.st-tab{font:inherit;font-size:13.5px;font-weight:600;padding:9px 18px;border-radius:100px;border:1px solid #2a323d;background:transparent;color:#c9d1db;cursor:pointer;transition:border-color .2s,color .2s}
+.st-tab:hover{border-color:#9aa4b2}
+.st-tab.on{border-color:#34e0b8;color:#34e0b8;background:rgba(52,224,184,.07)}
+.st-card{border:1px solid #232a33;border-radius:16px;padding:10px 22px 18px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),#07080a}
+.st-row{display:grid;grid-template-columns:150px 1fr 70px;gap:16px;align-items:center;padding:13px 0;border-top:1px solid #161b22;font-size:14.5px}
+.st-row:first-child{border-top:0}
+.st-bar{height:8px;border-radius:8px;background:#11161c;overflow:hidden}
+.st-bar i{display:block;height:100%;width:0;background:#34e0b8;border-radius:8px;transition:width .6s ease}
+.st-val{text-align:right;font-variant-numeric:tabular-nums;color:#fff;font-weight:600}
+.st-note{font-size:12.5px;color:#6f7a88;margin-top:14px;text-align:center}
+@media (max-width:560px){.st-row{grid-template-columns:110px 1fr 56px;gap:10px}}
+.checkout label{display:block;font-size:13px;color:#8d97a5;margin:0 0 6px}
+.checkout input[type=email]{width:100%;font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #2a323d;background:#0b0e12;color:#eef2f7;margin-bottom:16px}
+.checkout input[type=email]:focus{outline:0;border-color:#34e0b8}
+.checkout .go{width:100%;font:inherit;font-weight:600;padding:13px;border-radius:12px;border:1px solid #eef2f7;background:#eef2f7;color:#05080b;cursor:pointer}
+.checkout .go:disabled{opacity:.5;cursor:default}
+.checkout .fine{font-size:12px;color:#6f7a88;margin-top:12px;line-height:1.5}
+.checkout .total{display:flex;justify-content:space-between;font-size:14px;color:#8d97a5;margin:-8px 0 18px}
 </style></head>
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
@@ -83,9 +106,17 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
   <div class="btns">
     <button class="btn solid" type="button" id="buy-open">Buy now</button>
     <a class="btn" href="mailto:hello@codewrightguild.com?subject=Aegis-Anti-Cheat">Enquire</a>
+    <a class="btn" href="#statistics">Statistics</a>
     <a class="btn" href="./#catalogue">Back to catalogue</a>
   </div>
 </div></main>
+<section class="stats-sec" id="statistics" aria-labelledby="st-h">
+  <h2 id="st-h">Detection statistics</h2>
+  <p class="sub">How often each check fires at each detection strength.</p>
+  <div class="st-tabs" id="st-tabs" role="tablist"></div>
+  <div class="st-card" id="st-card"></div>
+  <p class="st-note" id="st-note"></p>
+</section>
 <script>
 /* PS3-style silk ribbon. Shape + greys are measured from the reference image.
    Tweak: BIG (ribbon thickness), ARCH (how much it arches), Q (quality), the t* numbers (speed) */
@@ -154,6 +185,31 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
   requestAnimationFrame(loop);
 })();
 </script>
+<script>
+/* ===== STATISTICS =====
+   Add or edit strengths here. Each strength: {label:'Strength 2', rows:[['Check name', percent], ...]}.
+   Negative values are shown as entered; bars are drawn for 0 and above. */
+var STATS=[
+  {label:'Strength 2',rows:[['TriggerBot',0.7],['KillAura',-0.0]]}
+];
+var STATS_NOTE='Percentages show the share of flagged events attributed to each check.';
+(function(){
+  var tabs=document.getElementById('st-tabs'), card=document.getElementById('st-card');
+  document.getElementById('st-note').textContent=STATS_NOTE;
+  function fmt(v){ return (Object.is(v,-0)||v<0?'-':'')+Math.abs(v).toFixed(1)+'%'; }
+  function show(k){
+    Array.prototype.forEach.call(tabs.children,function(b,i){ b.classList.toggle('on',i===k); });
+    var max=Math.max.apply(null,STATS[k].rows.map(function(r){return Math.max(r[1],0);}).concat([1]));
+    card.innerHTML=STATS[k].rows.map(function(r){
+      return '<div class="st-row"><span>'+r[0]+'</span><div class="st-bar"><i data-w="'+(Math.max(r[1],0)/max*100)+'"></i></div><span class="st-val">'+fmt(r[1])+'</span></div>'; }).join('');
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      Array.prototype.forEach.call(card.querySelectorAll('i'),function(e){ e.style.width=e.dataset.w+'%'; }); }); });
+  }
+  STATS.forEach(function(g,k){ var b=document.createElement('button'); b.type='button'; b.className='st-tab'; b.textContent=g.label;
+    b.addEventListener('click',function(){ show(k); }); tabs.appendChild(b); });
+  show(0);
+})();
+</script>
 <dialog id="buy" class="buy" aria-label="Choose a tier">
   <button class="buy-x" type="button" aria-label="Close">&times;</button>
   <div class="buy-wrap">
@@ -162,7 +218,12 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
     <div id="checkout" class="checkout" hidden>
       <button class="back" type="button">&larr; Change tier</button>
       <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-      <div id="pp"></div>
+      <label for="buyer-email">Email for your licence and receipt</label>
+      <input id="buyer-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <div class="total"><span>Total (USD)</span><span id="sel-total"></span></div>
+      <button class="go" id="go" type="button">Continue to PayPal</button>
+      <div id="pp" hidden></div>
+      <p class="fine">You will pay securely through PayPal. Card payments are available at PayPal checkout without a PayPal account.</p>
       <p class="msg" id="msg" role="status"></p>
     </div>
   </div>
@@ -193,7 +254,7 @@ var FEATURES=[
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
   var list=document.getElementById('tiers'), box=document.getElementById('checkout'), ttl=document.getElementById('buy-title'),
-      pp=document.getElementById('pp'), msg=document.getElementById('msg'), btns=null, sdkP=null;
+      pp=document.getElementById('pp'), msg=document.getElementById('msg'), go=document.getElementById('go'), email=document.getElementById('buyer-email'), btns=null, sdkP=null;
   function money(v){ return '$'+v.toFixed(2).replace('.00',''); }
   TIERS.forEach(function(t,i){
     var rows=FEATURES.map(function(f){ var v=f[1][i], off=(v==='');
@@ -204,7 +265,8 @@ var FEATURES=[
       +'<div class="speed">'+(SPEED[i]==='Instant'?'Instant detection':'Detects in '+SPEED[i])+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+t.name+'</button>';
     list.appendChild(a); });
-  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; msg.innerHTML='';
+  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
+    ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
     document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
   function sdk(){ if(window.paypal) return Promise.resolve();
@@ -212,26 +274,33 @@ var FEATURES=[
       s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+CURRENCY+'&intent=capture';
       s.onload=ok; s.onerror=function(){ sdkP=null; no(); }; document.head.appendChild(s); });
     return sdkP; }
-  function pick(i){ var t=TIERS[i], label='Aegis-Anti-Cheat \u2014 '+t.name+' (Tier '+(i+1)+')';
-    list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; msg.innerHTML='';
-    document.getElementById('sel-name').textContent=label; document.getElementById('sel-price').textContent=money(t.price);
+  var cur=-1;
+  function pick(i){ cur=i; var t=TIERS[i];
+    list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; pp.hidden=true; msg.innerHTML='';
+    go.hidden=false; go.disabled=false; email.disabled=false;
+    document.getElementById('sel-name').textContent='Aegis-Anti-Cheat \u2014 '+t.name+' (Tier '+(i+1)+')';
+    document.getElementById('sel-price').textContent=money(t.price); document.getElementById('sel-total').textContent=money(t.price); }
+  function startPay(){ var t=TIERS[cur], label='Aegis-Anti-Cheat \u2014 '+t.name+' (Tier '+(cur+1)+')', addr=email.value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)){ msg.textContent='Please enter a valid email address.'; email.focus(); return; }
     if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
-    msg.textContent='Loading secure checkout\u2026';
-    sdk().then(function(){ msg.textContent='';
+    go.disabled=true; email.disabled=true; msg.textContent='Loading secure checkout\u2026';
+    sdk().then(function(){ msg.textContent=''; go.hidden=true; pp.hidden=false;
       btns=paypal.Buttons({
-        style:{layout:'vertical',color:'white',shape:'rect',label:'pay'},
-        createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
+        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+        createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,custom_id:t.name+'|'+addr,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
         onApprove:function(data,a){ return a.order.capture().then(function(o){
-          pp.innerHTML=''; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
-          msg.innerHTML='<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+o.id+'<br>PayPal will email you a receipt, and Codewright Guild will be in touch with your next steps.'; }); },
+          pp.innerHTML=''; pp.hidden=true; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
+          document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true;
+          msg.innerHTML='<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+o.id+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your next steps.'; }); },
         onCancel:function(){ msg.textContent='Payment cancelled. You have not been charged.'; },
         onError:function(){ msg.innerHTML='Something went wrong with PayPal. You have not been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; }
       }); btns.render('#pp');
-    }).catch(function(){ msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
+    }).catch(function(){ go.disabled=false; email.disabled=false; go.hidden=false; msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
   }
   document.getElementById('buy-open').addEventListener('click',function(){ reset(); d.showModal(); });
   list.addEventListener('click',function(e){ var b=e.target.closest('.pick'); if(b) pick(+b.dataset.i); });
   d.querySelector('.back').addEventListener('click',reset);
+  go.addEventListener('click',startPay);
   d.addEventListener('click',function(e){ if(e.target===d||e.target.closest('.buy-x')) d.close(); });
   d.addEventListener('close',reset);
 })();
