@@ -55,7 +55,7 @@ p{margin-bottom:28px}
 /* PS3-style silk ribbon (greyscale). Tweak: shape in cyf()/hhf(), brightness in the alpha numbers, particles in the add() loops */
 (function(){
   var c=document.getElementById('bg'), x=c.getContext('2d',{alpha:false});
-  var w=0,h=0,n=0,t=0,last=0,GF,BG,GL,Y=[],P=[], Q=.8, STEP=10, K=7, i;
+  var w=0,h=0,n=0,t=0,last=0,GF,BG,GL,Y=[],C,Hh,P=[], Q=.8, STEP=10, K=7, i;
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function R(a,b){ return a+Math.random()*(b-a); }
   function add(g,u,o,s,b,v){ P.push({g:g,u:u,u0:u,o:o,s:s,b:b,v:v,ph:R(0,6.28),x:R(0,1),y:R(0,1)}); }
@@ -66,9 +66,9 @@ p{margin-bottom:28px}
   function cyf(u){ var d=u-.47, k=d<0?.88:.5;                       /* centre line: arches up, peaks near the middle */
     return h*(.37+k*d*d+.012*Math.sin(u*3.2-t*.35)+.008*Math.cos(u*5.1+t*.28)); }
   function hhf(u){ return h*(.038+.085*Math.pow(1-u,3)+.03*u*u)*(1+.1*Math.sin(u*4-t*.3)); }  /* thick on the left, thin on the right */
-  function tau(u){ return 1.1*Math.sin(u*3-t*.22+.5)+.3*Math.sin(u*7+t*.15); }                /* twist: makes strands cross */
+  function tau(u){ return .9*Math.sin(u*3-t*.22+.5)+.3*Math.sin(u*7+t*.15); }                /* twist: makes strands cross */
   function size(){
-    w=Math.ceil(innerWidth*Q); h=Math.ceil(innerHeight*Q); c.width=w; c.height=h; n=Math.ceil(w/STEP)+2;
+    w=Math.ceil(innerWidth*Q); h=Math.ceil(innerHeight*Q); c.width=w; c.height=h; n=Math.ceil(w/STEP)+2; C=new Float32Array(n); Hh=new Float32Array(n);
     Y=[]; for(var k=0;k<=K;k++) Y.push(new Float32Array(n));
     var col='rgba(215,219,226,';
     GF=x.createLinearGradient(0,0,w,0); GF.addColorStop(0,col+'1)'); GF.addColorStop(.45,col+'.62)'); GF.addColorStop(1,col+'.9)');
@@ -80,18 +80,21 @@ p{margin-bottom:28px}
     var j,k,u,cy,hh,tw;
     x.globalCompositeOperation='source-over'; x.globalAlpha=1; x.fillStyle=BG; x.fillRect(0,0,w,h);
     x.globalCompositeOperation='lighter';
-    for(j=0;j<n;j++){ u=j*STEP/w; cy=cyf(u); hh=hhf(u); tw=tau(u);
+    for(j=0;j<n;j++){ u=j*STEP/w; cy=cyf(u); hh=hhf(u); tw=tau(u); C[j]=cy; Hh[j]=hh;
       for(k=0;k<=K;k++) Y[k][j]=cy+hh*Math.cos(k*Math.PI/K+tw)+hh*.05*Math.sin(u*9+t*.4+k*1.7); }
     x.globalAlpha=.8+.2*Math.sin(t*.5); x.fillStyle=GL; x.fillRect(0,h*.3,w*.4,h*.6);
-    x.fillStyle=GF;
-    for(k=0;k<K;k++){ x.globalAlpha=(k&1)?.15:.08;
-      x.beginPath(); x.moveTo(0,Y[k][0]);
-      for(j=1;j<n;j++) x.lineTo(j*STEP,Y[k][j]);
-      for(j=n-1;j>=0;j--) x.lineTo(j*STEP,Y[k+1][j]);
+    /* glass body: 6 stacked translucent layers = smooth see-through gradient, brighter in the middle */
+    x.fillStyle=GF; x.globalAlpha=.03;
+    for(var l=0;l<6;l++){ var sc=1-l*.15;
+      x.beginPath(); x.moveTo(0,C[0]-Hh[0]*sc);
+      for(j=1;j<n;j++) x.lineTo(j*STEP,C[j]-Hh[j]*sc);
+      for(j=n-1;j>=0;j--) x.lineTo(j*STEP,C[j]+Hh[j]*sc);
       x.closePath(); x.fill(); }
-    x.strokeStyle=GF; x.lineWidth=5; x.globalAlpha=.06; strand(0);
-    x.lineWidth=.8;
-    for(k=0;k<=K;k++){ x.globalAlpha=(k==0)?.38:(k==K)?.3:.17; strand(k); }
+    /* soft strands: a wide faint glow + a thin faint core (no hard lines) */
+    x.strokeStyle=GF;
+    for(k=0;k<=K;k++){ var ed=(k===0||k===K);
+      x.lineWidth=5; x.globalAlpha=ed?.05:.025; strand(k);
+      x.lineWidth=1; x.globalAlpha=ed?(k===0?.26:.16):.07; strand(k); }
     x.fillStyle='#e6e9ef';
     for(i=0;i<P.length;i++){ var q=P[i], px, py, al=q.b*(.35+.65*(.5+.5*Math.sin(t*(.6+q.ph*.1)+q.ph)));
       if(q.g===2){ px=(q.x+.01*Math.sin(t*.1+q.ph))*w; py=(.05+q.y*.9)*h; }
