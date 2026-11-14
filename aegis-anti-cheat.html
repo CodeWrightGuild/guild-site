@@ -106,7 +106,7 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
 .tier:hover{border-color:var(--c);box-shadow:0 18px 44px -22px var(--c);background:radial-gradient(120% 60% at 100% 0%,color-mix(in srgb,var(--c) 16%,transparent),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015)),#07080a}
 .tier small{color:var(--c);opacity:.85}
 .tier:hover h3{color:var(--c)}
-.tier .shape{position:absolute;top:16px;right:16px;width:46px;height:46px;color:var(--c);opacity:.28;transition:opacity .3s;pointer-events:none}
+.tier .shape{position:absolute;top:12px;right:12px;width:84px;height:84px;color:var(--c);opacity:.28;transition:opacity .3s;pointer-events:none}
 .tier:hover .shape{opacity:1}
 .tier .shape svg{width:100%;height:100%;overflow:visible;transform-origin:50% 50%}
 .tier:hover .shape.rect svg{animation:tpulse 1.8s ease-in-out infinite}
@@ -270,10 +270,10 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
 var CURRENCY='USD';
 var TIERS=[
-  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'rect'},
-  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'pent'},
-  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'hex'},
-  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'tess'}
+  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:2},
+  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:3},
+  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:4},
+  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:5}
 ];
 /* Row = [label, [4 values], optional [4 small tags shown in brackets after the label], optional [4 hover explanations]] */
 var FEATURES=[
@@ -295,38 +295,30 @@ var FEATURES=[
   ['Multi-server management, shared flags',['','','','\u2713']],
   ['Support',['Community','Ticket','Priority','Dedicated']]
 ];
-/* Shapes: Starter = rectangle, Standard = pentagon, Plus = hexagon (each with all its diagonals), Network = rotating 4D tesseract */
-function polyShape(n){
-  var P=[],i,j,out='',R=19,cx=23,cy=23;
-  if(n===4){ P=[[5,12],[41,12],[41,34],[5,34]]; }
-  else for(i=0;i<n;i++){ var an=-Math.PI/2+i*2*Math.PI/n; P.push([cx+R*Math.cos(an),cy+R*Math.sin(an)]); }
-  for(i=0;i<n;i++) for(j=i+2;j<n;j++){ if(i===0&&j===n-1) continue;
-    out+='<line x1="'+P[i][0].toFixed(1)+'" y1="'+P[i][1].toFixed(1)+'" x2="'+P[j][0].toFixed(1)+'" y2="'+P[j][1].toFixed(1)+'" stroke="currentColor" stroke-width="1" opacity=".45"/>'; }
-  out+='<polygon points="'+P.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ')+'" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>';
-  P.forEach(function(p){ out+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.2" fill="currentColor"/>'; });
-  return out; }
-var TESS_V=[],TESS_E=[];
-(function(){ var i,j,d; for(i=0;i<16;i++) TESS_V.push([(i&1)?1:-1,(i&2)?1:-1,(i&4)?1:-1,(i&8)?1:-1]);
-  for(i=0;i<16;i++) for(j=i+1;j<16;j++){ d=i^j; if(d===1||d===2||d===4||d===8) TESS_E.push([i,j]); } })();
-function tessShape(){ var o='',k; for(k=0;k<TESS_E.length;k++) o+='<line stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>'; return o; }
-function tessDraw(svg,t){
-  var lines=svg.querySelectorAll('line'), P=[], i, v, x, y, z, w, c, s2, q, k;
-  for(i=0;i<16;i++){ v=TESS_V[i]; x=v[0]; y=v[1]; z=v[2]; w=v[3];
-    c=Math.cos(t); s2=Math.sin(t); q=x*c-w*s2; w=x*s2+w*c; x=q;                 /* rotate in the X-W plane */
-    c=Math.cos(t*.7); s2=Math.sin(t*.7); q=y*c-w*s2; w=y*s2+w*c; y=q;          /* rotate in the Y-W plane */
-    c=Math.cos(t*.45); s2=Math.sin(t*.45); q=z*c-w*s2; w=z*s2+w*c; z=q;        /* rotate in the Z-W plane */
-    c=Math.cos(t*.3); s2=Math.sin(t*.3); q=x*c-z*s2; z=x*s2+z*c; x=q;          /* plain 3D turn */
-    k=1/(2.6-w); x*=k; y*=k; z*=k; k=1/(3.4-z); P.push([23+x*k*48,23+y*k*48]); }
-  for(i=0;i<TESS_E.length;i++){ var a=P[TESS_E[i][0]], b2=P[TESS_E[i][1]], l=lines[i];
-    l.setAttribute('x1',a[0].toFixed(2)); l.setAttribute('y1',a[1].toFixed(2)); l.setAttribute('x2',b2[0].toFixed(2)); l.setAttribute('y2',b2[1].toFixed(2)); } }
-function tessInit(card){
-  var svg=card.querySelector('.shape svg'), t=.9, last=0, run=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  tessDraw(svg,t);
-  function loop(ts){ if(!run) return; t+=Math.min((ts-last)/1000,.05)*.8; last=ts; tessDraw(svg,t); requestAnimationFrame(loop); }
+/* Shapes: one hypercube per tier, one dimension higher each time: Starter = square (2D), Standard = cube (3D), Plus = tesseract (4D), Network = penteract (5D).
+   Set shape:2..6 on a tier to change its dimension. Drawn still, and rotating through every dimension while the card is hovered. */
+function cubeEdges(n){ var E=[],N=1<<n,i,j,d,b; for(i=0;i<N;i++) for(b=0;b<n;b++){ j=i^(1<<b); if(j>i) E.push([i,j]); } return E; }
+function cubeProject(n,t,sc){
+  var N=1<<n,P=[],i,d,a,b,v,c,s2,q,k,pl=[],p=0;
+  for(a=0;a<n;a++) for(b=a+1;b<n;b++) pl.push([a,b,.55+((a*3+b*5)%7)*.11]);
+  for(i=0;i<N;i++){ v=[]; for(d=0;d<n;d++) v.push((i>>d)&1?1:-1);
+    for(p=0;p<pl.length;p++){ a=pl[p][0]; b=pl[p][1]; c=Math.cos(t*pl[p][2]); s2=Math.sin(t*pl[p][2]); q=v[a]*c-v[b]*s2; v[b]=v[a]*s2+v[b]*c; v[a]=q; }
+    for(d=n-1;d>=2;d--){ k=1/((d>2?2.6:3.4)-v[d]); for(a=0;a<d;a++) v[a]*=k; }
+    P.push([23+v[0]*sc,23+v[1]*sc]); }
+  return P; }
+function cubeFit(n){ var m=0,t,P,i; for(t=0;t<24;t+=.4){ P=cubeProject(n,t,1); for(i=0;i<P.length;i++) m=Math.max(m,Math.abs(P[i][0]-23),Math.abs(P[i][1]-23)); } return 20/m; }
+function cubeLines(n){ var o='',k,L=cubeEdges(n).length; for(k=0;k<L;k++) o+='<line stroke="currentColor" stroke-width="'+(n>=5?1.1:n===4?1.4:1.8)+'" stroke-linecap="round"/>'; return o; }
+function cubeDraw(svg,n,E,sc,t){ var P=cubeProject(n,t,sc), L=svg.querySelectorAll('line'), i;
+  for(i=0;i<E.length;i++){ var a=P[E[i][0]], b=P[E[i][1]];
+    L[i].setAttribute('x1',a[0].toFixed(2)); L[i].setAttribute('y1',a[1].toFixed(2)); L[i].setAttribute('x2',b[0].toFixed(2)); L[i].setAttribute('y2',b[1].toFixed(2)); } }
+function cubeInit(card,n){
+  var svg=card.querySelector('.shape svg'), E=cubeEdges(n), sc=cubeFit(n), t=.9, last=0, run=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  cubeDraw(svg,n,E,sc,t);
+  function loop(ts){ if(!run) return; t+=Math.min((ts-last)/1000,.05)*.8; last=ts; cubeDraw(svg,n,E,sc,t); requestAnimationFrame(loop); }
   card.addEventListener('mouseenter',function(){ if(still||run) return; run=true; last=performance.now(); requestAnimationFrame(loop); });
   card.addEventListener('mouseleave',function(){ run=false; });
 }
-var SHAPES={rect:polyShape(4),pent:polyShape(5),hex:polyShape(6),tess:tessShape()};
+var SHAPES={2:cubeLines(2),3:cubeLines(3),4:cubeLines(4),5:cubeLines(5),6:cubeLines(6)};
 
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
@@ -341,10 +333,10 @@ var SHAPES={rect:polyShape(4),pent:polyShape(5),hex:polyShape(6),tess:tessShape(
         +(tip&&!off?'<button class="info" type="button" aria-label="More info">i</button><span class="tip" role="tooltip">'+esc(tip)+'</span>':'')
         +'</span><span'+(v==='\u2713'?' class="ok"':'')+'>'+(off?'\u2014':esc(v))+'</span></li>'; }).join('');
     var el=document.createElement('article'); el.className='tier'; el.style.setProperty('--c',t.color);
-    el.innerHTML='<span class="shape '+t.shape+'" aria-hidden="true"><svg viewBox="0 0 46 46">'+SHAPES[t.shape]+'</svg></span>'
+    el.innerHTML='<span class="shape" aria-hidden="true"><svg viewBox="0 0 46 46">'+SHAPES[t.shape]+'</svg></span>'
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
-    list.appendChild(el); if(t.shape==='tess') tessInit(el); });
+    list.appendChild(el); cubeInit(el,t.shape); });
   function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
@@ -366,7 +358,7 @@ var SHAPES={rect:polyShape(4),pent:polyShape(5),hex:polyShape(6),tess:tessShape(
     go.disabled=true; email.disabled=true; msg.textContent='Loading secure checkout\u2026';
     sdk().then(function(){ msg.textContent=''; go.hidden=true; pp.hidden=false;
       btns=paypal.Buttons({
-        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+        style:{layout:'vertical',color:'gold',shape:2,label:'paypal'},
         createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,custom_id:t.name+'|'+addr,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
         onApprove:function(data,a){ return a.order.capture().then(function(o){
           pp.innerHTML=''; pp.hidden=true; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
