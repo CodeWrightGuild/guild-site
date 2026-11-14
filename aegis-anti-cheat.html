@@ -270,103 +270,98 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
 var CURRENCY='USD';
 var TIERS=[
-  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'sword'},
-  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'axe'},
-  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:'spear'},
-  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:'mace'}
+  {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:4},
+  {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:5},
+  {name:'Plus',    price:90,  tagline:'Busy servers',    color:'#b48cff', shape:6},
+  {name:'Network', price:115, tagline:'Server networks', color:'#ffb347', shape:8}
 ];
 /* Row = [label, [4 values], optional [4 small tags shown in brackets after the label], optional [4 hover explanations]] */
 var FEATURES=[
-  ['Servers per licence',['1 server','2 servers','5 servers','10 servers'],[],['Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.','Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. This is the highest limit, built for networks.']],
-  ['Full detection, all cheats',['\u2713','\u2713','\u2713','\u2713'],['60s','45s','30s','Instant'],[
-    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Starter, a verdict arrives within about 60 seconds of the suspicious behaviour, so a cheater can keep playing for up to a minute before action is taken.',
+  ['Servers per licence',['1 server','2 servers','5 servers','10 servers'],[],['Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.',
+    'Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.',
+    'Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. Need more servers? Move up a tier.',
+    'Servers per licence: how many separate game servers (for example Server 1 and Server 2 behind one proxy) can run Aegis with the same licence key at the same time. This is the highest limit, built for networks.']],
+  ['Full detection, all cheats',['\u2713','\u2713','\u2713','\u2713'],['60s','45s','30s','Instant'],['Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Starter, a verdict arrives within about 60 seconds of the suspicious behaviour, so a cheater can keep playing for up to a minute before action is taken.',
     'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Standard, a verdict arrives within about 45 seconds of the suspicious behaviour.',
     'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Plus, a verdict arrives within about 30 seconds of the suspicious behaviour, so cheaters are dealt with quickly.',
-    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Network, the verdict is instant: the player is judged the moment the behaviour is seen, so a cheater is stopped almost immediately.'
-  ]],
-  ['Alert-only and auto-punish modes',['\u2713','\u2713','\u2713','\u2713']],
-  ['Sensitivity presets and thresholds',['\u2713','\u2713','\u2713','\u2713']],
-  ['In-game and Discord alerts',['\u2713','\u2713','\u2713','\u2713']],
-  ['Log retention',['7 days','30 days','90 days','Custom']],
-  ['Staff review tools and flag history',['Basic','\u2713','\u2713','\u2713']],
-  ['Evidence replays or clips',['','','\u2713','\u2713'],['','','','AI-view'],['','','','AI-view replays: see what the AI saw, why it believes the player is most likely cheating, and where it is not confident.']],
-  ['Web dashboard and stats',['','','\u2713','\u2713']],
-  ['Per-check tuning and exemptions',['','','\u2713','\u2713']],
-  ['API and webhooks',['','','\u2713','\u2713']],
-  ['Multi-server management, shared flags',['','','','\u2713']],
-  ['Support',['Community','Ticket','Priority','Dedicated']]
+    'Detection time: how long Aegis takes to come back with a verdict on whether a player should be banned or not. On Network, the verdict is instant: the player is judged the moment the behaviour is seen, so a cheater is stopped almost immediately.']],
+  ['Alert-only and auto-punish modes',['\u2713','\u2713','\u2713','\u2713'],[],['Alert-only mode only notifies your staff when someone is flagged and leaves the decision to a human. Auto-punish mode lets Aegis act on its own, for example by kicking or banning the player. You can pick whichever suits your server.',
+    'Alert-only mode only notifies your staff when someone is flagged and leaves the decision to a human. Auto-punish mode lets Aegis act on its own, for example by kicking or banning the player. You can pick whichever suits your server.',
+    'Alert-only mode only notifies your staff when someone is flagged and leaves the decision to a human. Auto-punish mode lets Aegis act on its own, for example by kicking or banning the player. You can pick whichever suits your server.',
+    'Alert-only mode only notifies your staff when someone is flagged and leaves the decision to a human. Auto-punish mode lets Aegis act on its own, for example by kicking or banning the player. You can pick whichever suits your server.']],
+  ['Sensitivity presets and thresholds',['\u2713','\u2713','\u2713','\u2713'],[],['Presets are ready-made strictness levels, such as lenient, balanced and strict. Thresholds let you set exactly how suspicious a player must look before Aegis flags them, so you can balance catching cheaters against false flags.',
+    'Presets are ready-made strictness levels, such as lenient, balanced and strict. Thresholds let you set exactly how suspicious a player must look before Aegis flags them, so you can balance catching cheaters against false flags.',
+    'Presets are ready-made strictness levels, such as lenient, balanced and strict. Thresholds let you set exactly how suspicious a player must look before Aegis flags them, so you can balance catching cheaters against false flags.',
+    'Presets are ready-made strictness levels, such as lenient, balanced and strict. Thresholds let you set exactly how suspicious a player must look before Aegis flags them, so you can balance catching cheaters against false flags.']],
+  ['In-game and Discord alerts',['\u2713','\u2713','\u2713','\u2713'],[],['Aegis tells your staff about flags inside the game and in a Discord channel, so you do not have to keep a dashboard open to know when something happens.',
+    'Aegis tells your staff about flags inside the game and in a Discord channel, so you do not have to keep a dashboard open to know when something happens.',
+    'Aegis tells your staff about flags inside the game and in a Discord channel, so you do not have to keep a dashboard open to know when something happens.',
+    'Aegis tells your staff about flags inside the game and in a Discord channel, so you do not have to keep a dashboard open to know when something happens.']],
+  ['Log retention',['7 days','30 days','90 days','Custom'],[],['Log retention: how long Aegis keeps its records of flags and player history before deleting them. Starter keeps them for 7 days.',
+    'Log retention: how long Aegis keeps its records of flags and player history before deleting them. Standard keeps them for 30 days.',
+    'Log retention: how long Aegis keeps its records of flags and player history before deleting them. Plus keeps them for 90 days.',
+    'Log retention: how long Aegis keeps its records of flags and player history before deleting them. Network can choose its own retention period.']],
+  ['Staff review tools and flag history',['Basic','\u2713','\u2713','\u2713'],[],['Basic: staff can see recent flags in a simple list. Upgrade for the full review tools and a complete flag history for every player.',
+    'Staff can review each flag, see the full flag history of a player and decide whether to punish before any action is taken.',
+    'Staff can review each flag, see the full flag history of a player and decide whether to punish before any action is taken.',
+    'Staff can review each flag, see the full flag history of a player and decide whether to punish before any action is taken.']],
+  ['Evidence replays or clips',['','','\u2713','\u2713'],['','','','AI-view'],['Recorded replays or clips of the moment a player was flagged, so staff can check the proof before banning.',
+    'Recorded replays or clips of the moment a player was flagged, so staff can check the proof before banning.',
+    'Recorded replays or clips of the moment a player was flagged, so staff can check the proof before banning.',
+    'AI-view replays: see what the AI saw, why it believes the player is most likely cheating, and where it is not confident.']],
+  ['Web dashboard and stats',['','','\u2713','\u2713'],[],['A web page you open in your browser that shows flags, trends and statistics for your server, so you can see how Aegis is performing at a glance.',
+    'A web page you open in your browser that shows flags, trends and statistics for your server, so you can see how Aegis is performing at a glance.',
+    'A web page you open in your browser that shows flags, trends and statistics for your server, so you can see how Aegis is performing at a glance.',
+    'A web page you open in your browser that shows flags, trends and statistics for your server, so you can see how Aegis is performing at a glance.']],
+  ['Per-check tuning and exemptions',['','','\u2713','\u2713'],[],['Change the settings of each individual check separately, for example making one check stricter than another. Exemptions let you exclude certain players, such as staff, or certain situations, such as events.',
+    'Change the settings of each individual check separately, for example making one check stricter than another. Exemptions let you exclude certain players, such as staff, or certain situations, such as events.',
+    'Change the settings of each individual check separately, for example making one check stricter than another. Exemptions let you exclude certain players, such as staff, or certain situations, such as events.',
+    'Change the settings of each individual check separately, for example making one check stricter than another. Exemptions let you exclude certain players, such as staff, or certain situations, such as events.']],
+  ['API and webhooks',['','','\u2713','\u2713'],[],['An API lets your own bots and tools ask Aegis for data. Webhooks do the reverse: Aegis sends a message to your tool when something happens, such as a player being flagged.',
+    'An API lets your own bots and tools ask Aegis for data. Webhooks do the reverse: Aegis sends a message to your tool when something happens, such as a player being flagged.',
+    'An API lets your own bots and tools ask Aegis for data. Webhooks do the reverse: Aegis sends a message to your tool when something happens, such as a player being flagged.',
+    'An API lets your own bots and tools ask Aegis for data. Webhooks do the reverse: Aegis sends a message to your tool when something happens, such as a player being flagged.']],
+  ['Multi-server management, shared flags',['','','','\u2713'],[],['Manage all of your servers from one place. A player flagged on one server is flagged on all of them, so they cannot simply move on to the next server.',
+    'Manage all of your servers from one place. A player flagged on one server is flagged on all of them, so they cannot simply move on to the next server.',
+    'Manage all of your servers from one place. A player flagged on one server is flagged on all of them, so they cannot simply move on to the next server.',
+    'Manage all of your servers from one place. A player flagged on one server is flagged on all of them, so they cannot simply move on to the next server.']],
+  ['Support',['Community','Ticket','Priority','Dedicated'],[],['Community: help from other users and the community, with no direct line to the team.',
+    'Ticket: send a support ticket and get a reply from the team.',
+    'Priority: your tickets are answered ahead of standard ones.',
+    'Dedicated: a named contact or direct channel for your network.']]
 ];
-/* Shapes: a spinning 3D voxel item per tier (Sword, Axe, Spear, Mace) turning on the vertical axis, with more orbiting particles on each higher tier.
-   Change shape:'sword'|'axe'|'spear'|'mace' on a tier to swap its item; PARTICLES sets how many sparkles each tier has. */
-var PARTICLES=[4,8,13,20];
-var IC={steel:'#c4ced8',wood:'#8b5a2b',dwood:'#5f3b1d',gold:'#e0a93b',dsteel:'#7f8996'};
-function buildSprite(kind){
-  var G=[],y,x,k,i;
-  for(y=0;y<16;y++){ G.push([]); for(x=0;x<16;x++) G[y].push(null); }
-  function P(x,y,c){ if(x>=0&&x<16&&y>=0&&y<16) G[y][x]=c; }
-  function handle(n,c){ for(k=0;k<n;k++) P(2+k,13-k,c); }
-  if(kind==='sword'){
-    for(k=0;k<8;k++){ P(6+k,9-k,IC.steel); if(k<7) P(7+k,9-k,IC.steel); } P(14,1,IC.steel);
-    for(i=0;i<5;i++) P(3+i,8+i,IC.gold);
-    P(4,11,IC.wood); P(3,12,IC.wood); P(2,13,IC.wood); P(1,14,IC.gold);
-  } else if(kind==='axe'){
-    handle(9,IC.wood);
-    [[10,2],[11,2],[12,2],[8,3],[9,3],[10,3],[11,3],[12,3],[7,4],[8,4],[9,4],[10,4],[11,4],[7,5],[8,5],[9,5],[8,6]].forEach(function(p){ P(p[0],p[1],IC.steel); });
-  } else if(kind==='spear'){
-    for(k=0;k<10;k++) P(1+k,14-k,IC.wood); P(10,5,IC.dwood);
-    for(k=0;k<4;k++){ P(11+k,4-k,IC.steel); if(k<3){ P(11+k,3-k,IC.steel); P(12+k,4-k,IC.steel); } } P(15,0,IC.steel);
-  } else {
-    handle(7,IC.dwood);
-    for(y=0;y<16;y++) for(x=0;x<16;x++) if((x-11)*(x-11)+(y-4)*(y-4)<=7) P(x,y,IC.dsteel);
-    [[11,0],[15,4],[7,4],[14,1],[8,1],[14,7]].forEach(function(p){ P(p[0],p[1],IC.steel); });
-    P(11,4,IC.gold);
-  }
-  return G; }
-function buildFaces(G){
-  var F=[],x,y,T=2,h=T/2;
-  function f(x,y){ return x>=0&&x<16&&y>=0&&y<16&&G[y][x]; }
-  for(y=0;y<16;y++) for(x=0;x<16;x++){ if(!G[y][x]) continue;
-    var rgb=[1,3,5].map(function(i){ return parseInt(G[y][x].substr(i,2),16); }), sh=1;
-    if(!f(x,y-1)||!f(x-1,y)) sh*=1.2; if(!f(x+1,y)||!f(x,y+1)) sh*=.78;
-    var col=rgb.map(function(v){ return Math.min(255,Math.round(v*sh)); }), cx=x-7.5, cy=y-7.5, l=cx-.5, r=cx+.5, tp=cy-.5, bt=cy+.5;
-    F.push({p:[[l,tp,h],[r,tp,h],[r,bt,h],[l,bt,h]],n:[0,0,1],c:col});
-    F.push({p:[[r,tp,-h],[l,tp,-h],[l,bt,-h],[r,bt,-h]],n:[0,0,-1],c:col});
-    if(!f(x-1,y)) F.push({p:[[l,tp,-h],[l,tp,h],[l,bt,h],[l,bt,-h]],n:[-1,0,0],c:col});
-    if(!f(x+1,y)) F.push({p:[[r,tp,h],[r,tp,-h],[r,bt,-h],[r,bt,h]],n:[1,0,0],c:col});
-    if(!f(x,y-1)) F.push({p:[[l,tp,-h],[r,tp,-h],[r,tp,h],[l,tp,h]],n:[0,-1,0],c:col});
-    if(!f(x,y+1)) F.push({p:[[l,bt,h],[r,bt,h],[r,bt,-h],[l,bt,-h]],n:[0,1,0],c:col});
-  }
-  return F; }
-function itemInit(card,t,tierIndex){
-  var cv=card.querySelector('.shape canvas'), S=96, dpr=Math.min(window.devicePixelRatio||1,2), ctx=cv.getContext('2d'),
-      F=buildFaces(buildSprite(t.shape)), SC=4.6, PIT=-.3, cp=Math.cos(PIT), sp=Math.sin(PIT), run=false, last=0, ang=.75, tm=1,
-      still=matchMedia('(prefers-reduced-motion: reduce)').matches,
-      pc=[1,3,5].map(function(i){ return parseInt(t.color.substr(i,2),16); }), parts=[], n=PARTICLES[tierIndex]||6, i;
+/* Shapes: a flat 2D polygon per tier (Starter 4 points, Standard 5, Plus 6, Network 8). Every 10 seconds the points pop in, join up,
+   the shape spins, then the lines pull back and the points retract and vanish, and it starts again. Change shape:N on a tier for N points. */
+var POLYS=[];
+function polyInit(card,t){
+  var cv=card.querySelector('.shape canvas'), S=96, C=S/2, dpr=Math.min(window.devicePixelRatio||1,2), ctx=cv.getContext('2d'), n=t.shape, V=[], i,
+      pc=[1,3,5].map(function(k){ return parseInt(t.color.substr(k,2),16); }), col='rgb('+pc.join(',')+')';
   cv.width=S*dpr; cv.height=S*dpr;
-  for(i=0;i<n;i++) parts.push({r:8.2+Math.random()*3,y:(Math.random()-.5)*15,sp:(.5+Math.random()*.9)*(Math.random()<.5?-1:1),a:Math.random()*6.283,sz:1+Math.random()*1.3,ph:Math.random()*6.283});
-  function draw(){
-    var ca=Math.cos(ang), sa=Math.sin(ang), L=[], j, q, p, d, X, Y, Z, x2, z2, y2;
+  for(i=0;i<n;i++){ var an=-Math.PI/2+i*2*Math.PI/n; V.push(n===4?[[-1.15,-.72],[1.15,-.72],[1.15,.72],[-1.15,.72]][i]:[Math.cos(an),Math.sin(an)]); }
+  var R=n===4?27:33;
+  function ez(x){ x=x<0?0:x>1?1:x; return 1-Math.pow(1-x,3); }
+  function draw(tm,calm){
+    var ang=calm?0:1.5*Math.max(0,tm-4.6), ca=Math.cos(ang), sa=Math.sin(ang), P=[], j, k, r, x, y;
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,S,S);
-    function rot(x,y,z){ x2=x*ca+z*sa; z2=-x*sa+z*ca; y2=y*cp-z2*sp; return [x2,y2,y*sp+z2*cp]; }
-    for(j=0;j<F.length;j++){ q=F[j]; var nn=rot(q.n[0],q.n[1],q.n[2]); if(nn[2]<=.001) continue;
-      var pts=q.p.map(function(v){ return rot(v[0],v[1],v[2]); }); d=(pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
-      var b=.5+.5*Math.max(0,-.35*nn[0]-.55*nn[1]+.76*nn[2]);
-      L.push({d:d,pts:pts,col:'rgb('+Math.round(q.c[0]*b)+','+Math.round(q.c[1]*b)+','+Math.round(q.c[2]*b)+')'}); }
-    for(j=0;j<parts.length;j++){ p=parts[j]; var a=p.a+tm*p.sp, pp=rot(Math.cos(a)*p.r,p.y+Math.sin(tm*1.3+p.ph)*.9,Math.sin(a)*p.r); L.push({d:pp[2],pt:pp,p:p}); }
-    L.sort(function(u,v){ return u.d-v.d; });
-    for(j=0;j<L.length;j++){ q=L[j];
-      if(q.pts){ ctx.beginPath(); ctx.moveTo(S/2+q.pts[0][0]*SC,S/2+q.pts[0][1]*SC);
-        for(i=1;i<4;i++) ctx.lineTo(S/2+q.pts[i][0]*SC,S/2+q.pts[i][1]*SC);
-        ctx.closePath(); ctx.fillStyle=q.col; ctx.strokeStyle=q.col; ctx.lineWidth=.6; ctx.fill(); ctx.stroke(); }
-      else { var al=.45+.55*(.5+.5*Math.sin(tm*2+q.p.ph)), rr=q.p.sz*(1+q.pt[2]*.03), px=S/2+q.pt[0]*SC, py=S/2+q.pt[1]*SC;
-        ctx.fillStyle='rgba('+pc[0]+','+pc[1]+','+pc[2]+','+(al*.22)+')'; ctx.beginPath(); ctx.arc(px,py,rr*2.6,0,6.283); ctx.fill();
-        ctx.fillStyle='rgba('+Math.min(255,pc[0]+70)+','+Math.min(255,pc[1]+70)+','+Math.min(255,pc[2]+70)+','+al+')'; ctx.beginPath(); ctx.arc(px,py,rr,0,6.283); ctx.fill(); } }
+    for(j=0;j<n;j++){ r=calm?1:1-ez((tm-8.5-j*.08)/.7); x=V[j][0]*R*r; y=V[j][1]*R*r; P.push([C+x*ca-y*sa,C+x*sa+y*ca,r,calm?1:ez((tm-j*(1.6/n))/.45)]); }
+    ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.shadowColor=col; ctx.shadowBlur=8;
+    for(j=0;j<n;j++){ var a2=P[j], b2=P[(j+1)%n], fr=calm?1:ez((tm-2.4-j*(1.5/n))/.7)*(1-ez((tm-7.2-(n-1-j)*(.7/n))/.7));
+      if(fr<=.001) continue; ctx.beginPath(); ctx.moveTo(a2[0],a2[1]); ctx.lineTo(a2[0]+(b2[0]-a2[0])*fr,a2[1]+(b2[1]-a2[1])*fr); ctx.stroke(); }
+    ctx.shadowBlur=0;
+    for(j=0;j<n;j++){ var pp=P[j], sz=3.4*pp[3]*pp[2]; if(sz<=.05) continue;
+      ctx.fillStyle='rgba('+pc.join(',')+','+(.25*pp[2])+')'; ctx.beginPath(); ctx.arc(pp[0],pp[1],sz*2.3,0,6.283); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(pp[0],pp[1],sz,0,6.283); ctx.fill(); }
   }
-  draw();
-  function loop(ts){ if(!run) return; var dt=Math.min((ts-last)/1000,.05); last=ts; ang+=dt*1.7; tm+=dt; draw(); requestAnimationFrame(loop); }
-  card.addEventListener('mouseenter',function(){ if(still||run) return; run=true; last=performance.now(); requestAnimationFrame(loop); });
-  card.addEventListener('mouseleave',function(){ run=false; });
+  POLYS.push(draw); draw(5,true);
 }
+(function(){
+  var d=document.getElementById('buy'), t0=0, was=false, still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function loop(ts){ requestAnimationFrame(loop);
+    if(!d||!d.open){ was=false; return; }
+    if(!was){ was=true; t0=ts; }
+    var tm=((ts-t0)/1000)%10; for(var i=0;i<POLYS.length;i++) POLYS[i](tm,still); }
+  requestAnimationFrame(loop);
+})();
 
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
@@ -378,13 +373,13 @@ function itemInit(card,t,tierIndex){
     var rows=FEATURES.map(function(f){ var v=f[1][i], off=(v===''), tg=f[2]&&f[2][i], tip=f[3]&&f[3][i];
       return '<li'+(off?' class="off"':'')+'><span class="lab">'+f[0]
         +(tg&&!off?' <em class="tag">('+esc(tg)+')</em>':'')
-        +(tip&&!off?'<button class="info" type="button" aria-label="More info">i</button><span class="tip" role="tooltip">'+esc(tip)+'</span>':'')
+        +(tip?'<button class="info" type="button" aria-label="More info">i</button><span class="tip" role="tooltip">'+esc(tip)+'</span>':'')
         +'</span><span'+(v==='\u2713'?' class="ok"':'')+'>'+(off?'\u2014':esc(v))+'</span></li>'; }).join('');
     var el=document.createElement('article'); el.className='tier'; el.style.setProperty('--c',t.color);
     el.innerHTML='<span class="shape" aria-hidden="true"><canvas></canvas></span>'
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
-    list.appendChild(el); itemInit(el,t,i); });
+    list.appendChild(el); polyInit(el,t); });
   function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; go.disabled=false; email.disabled=false; email.hidden=false;
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
@@ -406,7 +401,7 @@ function itemInit(card,t,tierIndex){
     go.disabled=true; email.disabled=true; msg.textContent='Loading secure checkout\u2026';
     sdk().then(function(){ msg.textContent=''; go.hidden=true; pp.hidden=false;
       btns=paypal.Buttons({
-        style:{layout:'vertical',color:'gold',shape:'sword',label:'paypal'},
+        style:{layout:'vertical',color:'gold',shape:4,label:'paypal'},
         createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,custom_id:t.name+'|'+addr,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
         onApprove:function(data,a){ return a.order.capture().then(function(o){
           pp.innerHTML=''; pp.hidden=true; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
