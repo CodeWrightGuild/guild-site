@@ -39,20 +39,32 @@ main{justify-content:center;align-items:flex-end;padding:0 24px 8vh;text-align:c
 h1{font-size:clamp(36px,5.2vw,64px);margin-bottom:16px}
 p{margin-bottom:28px}
 button.btn{font:inherit;font-weight:600;font-size:15px;cursor:pointer;background:transparent}
-dialog.buy{border:1px solid #232a33;border-radius:18px;background:rgba(8,9,11,.97);color:#eef2f7;padding:0;width:min(880px,94vw);max-height:92vh;overflow:auto;margin:auto;box-shadow:0 40px 120px -20px #000}
-dialog.buy::backdrop{background:rgba(0,0,0,.7);backdrop-filter:blur(6px)}
-.buy-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #161b22;font-size:16px}
-.buy-x{background:none;border:1px solid #2a323d;color:#c9d1db;border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:18px}
+dialog.buy{background:transparent;border:0;padding:0;width:min(1240px,96vw);max-height:94vh;overflow:auto;margin:auto;color:#eef2f7}
+dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
+.buy-wrap{padding:54px 6px 24px}
+.buy-title{text-align:center;font-family:"Iowan Old Style",Georgia,serif;font-size:clamp(24px,3vw,34px);font-weight:600;margin-bottom:24px}
+.buy-x{position:fixed;top:18px;right:22px;z-index:5;background:rgba(8,9,11,.9);border:1px solid #2a323d;color:#c9d1db;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:20px}
 .buy-x:hover{border-color:#fff;color:#fff}
-.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;padding:20px}
-.tier{text-align:left;font:inherit;color:inherit;cursor:pointer;border:1px solid #232a33;border-radius:14px;padding:22px 20px;
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015));transition:transform .25s,border-color .25s}
-.tier:hover,.tier:focus-visible{transform:translateY(-3px);border-color:#9aa4b2;outline:none}
-.tier small{display:block;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8d97a5;margin-bottom:12px}
-.tier b{display:block;font-family:"Iowan Old Style",Georgia,serif;font-size:38px;font-weight:600}
-.tier span{display:block;margin-top:10px;font-size:13.5px;color:#8d97a5;min-height:1.3em}
-.checkout{padding:22px 20px 26px;max-width:440px;margin:0 auto}
-.checkout[hidden],.tiers[hidden]{display:none}
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:stretch}
+.tiers[hidden],.checkout[hidden],.buy-title[hidden]{display:none}
+@media (max-width:1020px){.tiers{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.tiers{grid-template-columns:1fr}}
+.tier{display:flex;flex-direction:column;border:1px solid #232a33;border-radius:16px;padding:22px 20px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015)),#07080a;transition:transform .25s,border-color .25s}
+.tier:hover{transform:translateY(-4px);border-color:#9aa4b2}
+.tier small{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#8d97a5}
+.tier h3{font-family:"Iowan Old Style",Georgia,serif;font-size:24px;font-weight:600;margin:6px 0 2px}
+.tier .price{font-family:"Iowan Old Style",Georgia,serif;font-size:42px;font-weight:600;line-height:1.1}
+.tier .speed{align-self:flex-start;margin:12px 0 4px;padding:6px 12px;border:1px solid #34e0b8;border-radius:100px;font-size:12.5px;color:#34e0b8;background:rgba(52,224,184,.07)}
+.rows{list-style:none;margin:14px 0 20px;flex:1}
+.rows li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #161b22;font-size:13px;line-height:1.35;color:#c9d1db}
+.rows li span:last-child{flex:none;text-align:right;color:#eef2f7}
+.rows li .ok{color:#34e0b8}
+.rows li.off{color:#4a525d}
+.rows li.off span:last-child{color:#4a525d}
+.pick{font:inherit;font-weight:600;padding:13px;border-radius:12px;border:1px solid #eef2f7;background:#eef2f7;color:#05080b;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.pick:hover{transform:translateY(-2px);box-shadow:0 8px 28px -10px rgba(255,255,255,.45)}
+.checkout{max-width:440px;margin:0 auto;border:1px solid #232a33;border-radius:16px;background:#07080a;padding:22px 20px 26px}
 .back{background:none;border:0;color:#8d97a5;cursor:pointer;font:inherit;font-size:14px;margin-bottom:14px}
 .back:hover{color:#fff}
 .sel{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-top:1px solid #161b22;border-bottom:1px solid #161b22;margin-bottom:20px}
@@ -142,49 +154,71 @@ dialog.buy::backdrop{background:rgba(0,0,0,.7);backdrop-filter:blur(6px)}
 })();
 </script>
 <dialog id="buy" class="buy" aria-label="Choose a tier">
-  <div class="buy-head"><b>Aegis-Anti-Cheat</b><button class="buy-x" type="button" aria-label="Close">&times;</button></div>
-  <div id="tiers" class="tiers"></div>
-  <div id="checkout" class="checkout" hidden>
-    <button class="back" type="button">&larr; Change tier</button>
-    <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-    <div id="pp"></div>
-    <p class="msg" id="msg" role="status"></p>
+  <button class="buy-x" type="button" aria-label="Close">&times;</button>
+  <div class="buy-wrap">
+    <h2 class="buy-title" id="buy-title">Aegis-Anti-Cheat &mdash; choose your tier</h2>
+    <div id="tiers" class="tiers"></div>
+    <div id="checkout" class="checkout" hidden>
+      <button class="back" type="button">&larr; Change tier</button>
+      <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
+      <div id="pp"></div>
+      <p class="msg" id="msg" role="status"></p>
+    </div>
   </div>
 </dialog>
 <script>
 /* ===== PAYMENTS (PayPal) =====
-   1) Paste your PayPal Client ID below (developer.paypal.com > Apps & Credentials). Use the Sandbox ID to test, the Live ID to take real money.
-   2) Edit TIERS to change names, prices or the small description line. */
+   1) Paste your PayPal Client ID below (developer.paypal.com > Apps & Credentials). Sandbox ID to test, Live ID for real money.
+   2) Edit TIERS / SPEED / FEATURES to change names, prices, detection times or the feature list.
+      In FEATURES each row is [label, [Starter, Standard, Plus, Network]]: use '✓' for included, '' for not included, or text. */
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';
 var CURRENCY='USD';
-var TIERS=[
-  {name:'Tier 1',price:20, note:''},
-  {name:'Tier 2',price:55, note:''},
-  {name:'Tier 3',price:90, note:''},
-  {name:'Tier 4',price:115,note:''}
+var TIERS=[{name:'Starter',price:20},{name:'Standard',price:55},{name:'Plus',price:90},{name:'Network',price:115}];
+var SPEED=['60 seconds','45 seconds','30 seconds','Instant'];
+var FEATURES=[
+  ['Full detection, all cheats',['✓','✓','✓','✓']],
+  ['Alert-only and auto-punish modes',['✓','✓','✓','✓']],
+  ['Sensitivity presets and thresholds',['✓','✓','✓','✓']],
+  ['In-game and Discord alerts',['✓','✓','✓','✓']],
+  ['Log retention',['7 days','30 days','90 days','Custom']],
+  ['Staff review tools and flag history',['Basic','✓','✓','✓']],
+  ['Evidence replays or clips',['','','✓','✓']],
+  ['Web dashboard and stats',['','','✓','✓']],
+  ['Per-check tuning and exemptions',['','','✓','✓']],
+  ['API and webhooks',['','','✓','✓']],
+  ['Multi-server management, shared flags',['','','','✓']],
+  ['Support',['Community','Ticket','Priority','Dedicated']]
 ];
 (function(){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
-  var list=document.getElementById('tiers'), box=document.getElementById('checkout'), pp=document.getElementById('pp'), msg=document.getElementById('msg'), btns=null, sdkP=null;
+  var list=document.getElementById('tiers'), box=document.getElementById('checkout'), ttl=document.getElementById('buy-title'),
+      pp=document.getElementById('pp'), msg=document.getElementById('msg'), btns=null, sdkP=null;
   function money(v){ return '$'+v.toFixed(2).replace('.00',''); }
   TIERS.forEach(function(t,i){
-    var b=document.createElement('button'); b.type='button'; b.className='tier'; b.dataset.i=i;
-    b.innerHTML='<small>'+t.name+'</small><b>'+money(t.price)+'</b><span>'+(t.note||'')+'</span>'; list.appendChild(b); });
-  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; msg.innerHTML=''; box.hidden=true; list.hidden=false; }
+    var rows=FEATURES.map(function(f){ var v=f[1][i], off=(v==='');
+      return '<li'+(off?' class="off"':'')+'><span>'+f[0]+'</span><span'+(v==='\u2713'?' class="ok"':'')+'>'+(off?'\u2014':v)+'</span></li>'; }).join('');
+    var a=document.createElement('article'); a.className='tier';
+    a.innerHTML='<small>Tier '+(i+1)+'</small><h3>'+t.name+'</h3><div class="price">'+money(t.price)+'</div>'
+      +'<div class="speed">'+(SPEED[i]==='Instant'?'Instant detection':'Detects in '+SPEED[i])+'</div>'
+      +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+t.name+'</button>';
+    list.appendChild(a); });
+  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; msg.innerHTML='';
+    box.hidden=true; list.hidden=false; ttl.hidden=false;
+    document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
   function sdk(){ if(window.paypal) return Promise.resolve();
     if(!sdkP) sdkP=new Promise(function(ok,no){ var s=document.createElement('script');
       s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+CURRENCY+'&intent=capture';
       s.onload=ok; s.onerror=function(){ sdkP=null; no(); }; document.head.appendChild(s); });
     return sdkP; }
-  function pick(t){
-    list.hidden=true; box.hidden=false; pp.innerHTML=''; msg.innerHTML='';
-    document.getElementById('sel-name').textContent='Aegis-Anti-Cheat \u2014 '+t.name; document.getElementById('sel-price').textContent=money(t.price);
-    if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject=Aegis-Anti-Cheat%20'+encodeURIComponent(t.name)+'">email us</a> to buy.'; return; }
+  function pick(i){ var t=TIERS[i], label='Aegis-Anti-Cheat \u2014 '+t.name+' (Tier '+(i+1)+')';
+    list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; msg.innerHTML='';
+    document.getElementById('sel-name').textContent=label; document.getElementById('sel-price').textContent=money(t.price);
+    if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
     msg.textContent='Loading secure checkout\u2026';
     sdk().then(function(){ msg.textContent='';
       btns=paypal.Buttons({
         style:{layout:'vertical',color:'white',shape:'rect',label:'pay'},
-        createOrder:function(data,a){ return a.order.create({purchase_units:[{description:'Aegis-Anti-Cheat \u2014 '+t.name,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
+        createOrder:function(data,a){ return a.order.create({purchase_units:[{description:label,amount:{currency_code:CURRENCY,value:t.price.toFixed(2)}}]}); },
         onApprove:function(data,a){ return a.order.capture().then(function(o){
           pp.innerHTML=''; document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
           msg.innerHTML='<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+o.id+'<br>PayPal will email you a receipt, and Codewright Guild will be in touch with your next steps.'; }); },
@@ -193,8 +227,8 @@ var TIERS=[
       }); btns.render('#pp');
     }).catch(function(){ msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
   }
-  document.getElementById('buy-open').addEventListener('click',function(){ reset(); document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; d.showModal(); });
-  list.addEventListener('click',function(e){ var b=e.target.closest('.tier'); if(b) pick(TIERS[+b.dataset.i]); });
+  document.getElementById('buy-open').addEventListener('click',function(){ reset(); d.showModal(); });
+  list.addEventListener('click',function(e){ var b=e.target.closest('.pick'); if(b) pick(+b.dataset.i); });
   d.querySelector('.back').addEventListener('click',reset);
   d.addEventListener('click',function(e){ if(e.target===d||e.target.closest('.buy-x')) d.close(); });
   d.addEventListener('close',reset);
