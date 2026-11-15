@@ -91,6 +91,7 @@ dialog.buy::backdrop{background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
 .checkout label{display:block;font-size:13px;color:#8d97a5;margin:0 0 6px}
 .checkout input[type=email]{width:100%;font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #2a323d;background:#0b0e12;color:#eef2f7;margin-bottom:16px}
 .checkout input[type=email]:focus{outline:0;border-color:#34e0b8}
+.checkout select{width:100%;font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #2a323d;background:#0b0e12;color:#eef2f7;margin-bottom:16px}
 .checkout .go{width:100%;font:inherit;font-weight:600;padding:13px;border-radius:12px;border:1px solid #eef2f7;background:#eef2f7;color:#05080b;cursor:pointer}
 .checkout .go:disabled{opacity:.5;cursor:default}
 .checkout .go.alt{background:transparent;color:#eef2f7;border-color:#2a323d;margin-top:10px}
@@ -143,6 +144,7 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
   <p>Keep your game fair.</p>
   <div class="btns">
     <button class="btn solid" type="button" id="buy-open">Buy now</button>
+    <a class="btn" id="join-discord" href="#" target="_blank" rel="noopener" style="display:none">Join our Discord</a>
     <a class="btn" href="mailto:hello@codewrightguild.com?subject=Aegis-Anti-Cheat">Enquire</a>
     <a class="btn" href="#statistics">Statistics</a>
     <a class="btn" href="./#catalogue">Back to catalogue</a>
@@ -259,15 +261,16 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
     <div id="checkout" class="checkout" hidden>
       <button class="back" type="button">&larr; Change tier</button>
       <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-      <label for="buyer-email">Your Google account (your receipt and licence details are sent here)</label>
-      <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in with Google below">
+      <label for="buyer-email">Your account (your receipt and licence details are sent to its verified email)</label>
+      <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in below">
       <div id="g-wrap"><div id="g-btn"></div></div>
       <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
-      <div class="total"><span>Total (USD)</span><span id="sel-total"></span></div>
+      <div id="cur-wrap"><label for="cur">Pay in</label><select id="cur"><option value="USD">USD</option></select></div>
+      <div class="total"><span id="tot-lab">Total (USD)</span><span id="sel-total"></span></div>
       <button class="go" id="go" type="button">Continue to PayPal</button>
       <div id="pp" hidden></div>
       <button class="go alt" id="inv" type="button">Email me a PayPal invoice instead</button>
-      <p class="fine">Sign-in is handled by Google and payment by PayPal, so we never see your passwords or card details. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your Google address and you pay it on paypal.com.</p>
+      <p class="fine">Sign-in is handled by Discord, GitHub or PayPal, and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your account email and you pay it on paypal.com.</p>
       <p class="msg" id="msg" role="status"></p>
     </div>
   </div>
@@ -278,10 +281,14 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
    2) Edit TIERS / SPEED / FEATURES to change names, prices, detection times or the feature list.
       In FEATURES each row is [label, [4 values], optional [4 bracket tags], optional [4 hover explanations]]: use '✓' for included, '' for not included, or text. */
 var PAYPAL_CLIENT_ID='YOUR_PAYPAL_CLIENT_ID';   /* the Client ID is meant to be public; NEVER put your PayPal Secret in this file */
-var API_BASE='';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
-var GOOGLE_CLIENT_ID='YOUR_GOOGLE_CLIENT_ID';   /* Google Cloud Console > APIs & Services > Credentials > OAuth client ID (type: Web). Like the PayPal Client ID it is meant to be public. Add this site's address under "Authorized JavaScript origins". */
+var API_BASE='https://wholesale-intensive-copyrights-encyclopedia.trycloudflare.com';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
+var DISCORD_CLIENT_ID='YOUR_DISCORD_CLIENT_ID';   /* discord.com/developers/applications > your app > OAuth2 > Client ID. It is public by design. NEVER put the Client Secret here. Add this page's address under OAuth2 > Redirects. */
+var GITHUB_CLIENT_ID='YOUR_GITHUB_CLIENT_ID';   /* GitHub > Settings > Developer settings > OAuth Apps > Client ID. Public. The Client SECRET goes only in .env on your PC. */
+var PAYPAL_LOGIN=false;   /* true = also show "Continue with PayPal" (needs Log in with PayPal enabled on your PayPal app and PAYPAL_LOGIN=on in .env) */
+var PAYPAL_MODE='sandbox';   /* 'sandbox' while testing, 'live' for real money (must match PAYPAL_ENV in .env) */
+var DISCORD_INVITE='';   /* your permanent Discord invite, e.g. 'https://discord.gg/yourcode'. Empty = no "Join our Discord" button. */
 var OFFER_INVOICE=true;   /* true = also show "Email me a PayPal invoice instead". false = card/PayPal checkout only. */
-var CURRENCY='USD';
+var CURRENCY='USD';   /* the currency preselected at checkout; customers can change it */
 var TIERS=[
   {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'tetra'},
   {name:'Standard',price:55,  tagline:'Growing servers', color:'#5aa9ff', shape:'octa'},
@@ -399,7 +406,7 @@ function polyInit(card,t){
   var d=document.getElementById('buy'); if(!d||!d.showModal) return;
   var list=document.getElementById('tiers'), box=document.getElementById('checkout'), ttl=document.getElementById('buy-title'),
       pp=document.getElementById('pp'), msg=document.getElementById('msg'), go=document.getElementById('go'), inv=document.getElementById('inv'), gbtn=document.getElementById('g-btn'), gwrap=document.getElementById('g-wrap'), gout=document.getElementById('g-out'),
-      email=document.getElementById('buyer-email'), btns=null, sdkP=null, gP=null, gInit=false, cred='', expired=false;
+      email=document.getElementById('buyer-email'), btns=null, sdkP={}, Q=null, wantCur='', curSel=document.getElementById('cur'), curWrap=document.getElementById('cur-wrap'), selPrice=document.getElementById('sel-price'), selTotal=document.getElementById('sel-total'), totLab=document.getElementById('tot-lab'), cred='', expired=false;
   function money(v){ return '$'+v.toFixed(2).replace('.00',''); }
   function esc(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
   TIERS.forEach(function(t,i){
@@ -413,51 +420,78 @@ function polyInit(card,t){
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
     list.appendChild(el); polyInit(el,t); });
-  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth();
+  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; curWrap.hidden=false; syncAuth();
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
     document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
-  /* ---- Google sign-in (Google's own button; we only ever receive a signed token, never a password) ---- */
-  function syncAuth(){ var ok=!!cred; go.disabled=!ok; inv.disabled=!ok; email.value=ok?email.value:''; gbtn.hidden=ok; gout.hidden=!ok; }
-  function who(tok){ try{ var b=tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(b)))).email||''; }catch(e){ return ''; } }   /* display only: the server re-checks the token with Google */
-  function onGoogle(r){ cred=r&&r.credential||''; expired=false; email.value=cred?who(cred):''; if(!email.value) cred=''; msg.textContent=''; syncAuth(); }
-  function gsi(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve();
-    if(!gP) gP=new Promise(function(ok,no){ var s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.async=true;
-      s.onload=ok; s.onerror=function(){ gP=null; no(); }; document.head.appendChild(s); });
-    return gP; }
-  function showGoogle(){
-    if(GOOGLE_CLIENT_ID.indexOf('YOUR_')===0){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
-    gsi().then(function(){
-      if(!gInit){ google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:false,cancel_on_tap_outside:true}); gInit=true; }
-      gbtn.innerHTML=''; google.accounts.id.renderButton(gbtn,{theme:'filled_black',size:'large',text:'signin_with',shape:'pill',width:280});
-    }).catch(function(){ gbtn.innerHTML='<p>Could not load Google sign-in. Check your connection and reload.</p>'; });
-  }
-  gout.addEventListener('click',function(){ cred=''; email.value=''; try{ google.accounts.id.disableAutoSelect(); }catch(e){} syncAuth(); showGoogle(); });
+  /* ---- Discord sign-in (Discord's own page; we only ever receive a token, never a password) ---- */
+  function syncAuth(){ var ok=!!cred; go.disabled=!ok; inv.disabled=!ok; curSel.disabled=false; email.value=ok?email.value:''; gbtn.hidden=ok; gout.hidden=!ok; }
+  function redirectUri(){ return location.origin+location.pathname; }
+  function rnd(){ var a=new Uint8Array(16); crypto.getRandomValues(a); return Array.prototype.map.call(a,function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); }
+  function joinLink(){ return /^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)?'<br><a href="'+DISCORD_INVITE+'" target="_blank" rel="noopener" style="color:#34e0b8">Join our Discord</a> for support and updates.':''; }
+  function startLogin(prov){ var st=rnd(), r=encodeURIComponent(redirectUri()), url;
+    if(prov==='test'){ msg.textContent='Signing you in\u2026';   /* TEMPORARY sandbox test login: delete before going live */
+      fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})})
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); })
+      .catch(function(){ msg.textContent='Test sign-in failed.'; }); return; }
+    try{ sessionStorage.setItem('aeg_state',st); sessionStorage.setItem('aeg_prov',prov); sessionStorage.setItem('aeg_tier',String(cur)); sessionStorage.setItem('aeg_cur',curSel.value); }catch(e){ msg.textContent='Your browser is blocking storage that sign-in needs. Allow it and try again.'; return; }
+    if(prov==='discord') url='https://discord.com/oauth2/authorize?client_id='+encodeURIComponent(DISCORD_CLIENT_ID)+'&response_type=token&scope='+encodeURIComponent('identify email')+'&redirect_uri='+r+'&state='+st;
+    else if(prov==='github') url='https://github.com/login/oauth/authorize?client_id='+encodeURIComponent(GITHUB_CLIENT_ID)+'&scope='+encodeURIComponent('user:email')+'&redirect_uri='+r+'&state='+st;
+    else url='https://www.'+(PAYPAL_MODE==='live'?'':'sandbox.')+'paypal.com/signin/authorize?flowEntry=static&client_id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&response_type=code&scope='+encodeURIComponent('openid email')+'&redirect_uri='+r+'&state='+st;
+    location.href=url; }
+  function showLogin(){ gbtn.innerHTML=''; var opts=[];
+    if(DISCORD_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['discord','Continue with Discord','#5865F2']);
+    if(GITHUB_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['github','Continue with GitHub','#24292f']);
+    if(PAYPAL_LOGIN&&PAYPAL_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['paypal','Continue with PayPal','#0070ba']);
+    if(PAYPAL_MODE==='sandbox') opts.push(['test','Test sign-in (sandbox only)','#6b7280']);   /* TEMPORARY: delete before going live */
+    if(!opts.length){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
+    opts.forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.className='go'; b.style.cssText='background:'+o[2]+';color:#fff;border-color:'+o[2]+';margin:0 0 8px'; b.textContent=o[1]; b.addEventListener('click',function(){ startLogin(o[0]); }); gbtn.appendChild(b); }); }
+  gout.addEventListener('click',function(){ cred=''; email.value=''; syncAuth(); showLogin(); });
+  /* coming back from Discord (token in the # part) or GitHub / PayPal (a one-time code in the ? part) */
+  function takeReturn(){ var q=new URLSearchParams(location.search), h=new URLSearchParams(location.hash.replace(/^#/,'')), st=q.get('state')||h.get('state')||''; if(!st) return;
+    var saved='', prov='', ti=-1; try{ saved=sessionStorage.getItem('aeg_state')||''; prov=sessionStorage.getItem('aeg_prov')||''; ti=parseInt(sessionStorage.getItem('aeg_tier'),10); wantCur=sessionStorage.getItem('aeg_cur')||''; ['aeg_state','aeg_prov','aeg_tier','aeg_cur'].forEach(function(k){ sessionStorage.removeItem(k); }); }catch(e){}
+    if(!saved||st!==saved) return;      /* not a sign-in we started */
+    var val=prov==='discord'?h.get('access_token'):q.get('code'); history.replaceState(null,'',location.pathname);
+    reset(); d.showModal(); if(!(ti>=0&&ti<TIERS.length)) ti=0; pick(ti);
+    if(!val){ msg.textContent='Sign-in was cancelled.'; return; }
+    msg.textContent='Signing you in\u2026';
+    fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(){ msg.textContent='Sign-in failed. Make sure your account has a verified email, then try again.'; syncAuth(); }); }
+  /* ---- currencies: the server owns the prices and exchange rates; this is display only ---- */
+  function dec(c){ return /^(HUF|JPY|TWD)$/.test(c)?0:2; }
+  function fmtc(a,c){ try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:c,minimumFractionDigits:dec(c),maximumFractionDigits:dec(c)}).format(parseFloat(a)); }catch(e){ return a+' '+c; } }
+  function showPrice(){ var t=TIERS[cur]; if(!t) return; var c=curSel.value, a=Q&&Q[c]&&Q[c][t.name], txt=a?fmtc(a,c):money(t.price);
+    selPrice.textContent=txt; selTotal.textContent=txt; totLab.textContent='Total ('+(a?c:'USD')+')'; }
+  function loadQuote(){ if(Q||!API_BASE) return;
+    fetch(API_BASE+'/api/quote').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ Q=o.prices; var keep=curSel.value||CURRENCY, names=null; try{ names=new Intl.DisplayNames(undefined,{type:'currency'}); }catch(e){}
+      curSel.innerHTML=''; Object.keys(Q).forEach(function(c){ var op=document.createElement('option'); op.value=c; var n=''; try{ n=names?names.of(c):''; }catch(e){} op.textContent=c+(n?' - '+n:''); curSel.appendChild(op); });
+      var pick_=wantCur||keep; curSel.value=Q[pick_]?pick_:'USD'; wantCur=''; showPrice(); }).catch(function(){}); }
+  curSel.addEventListener('change',showPrice);
   function finish(html){   /* hide the form, show the final message */
-    pp.innerHTML=''; pp.hidden=true; go.hidden=true; inv.hidden=true; gwrap.hidden=true; gout.hidden=true;
+    pp.innerHTML=''; pp.hidden=true; go.hidden=true; inv.hidden=true; gwrap.hidden=true; gout.hidden=true; curWrap.hidden=true;
     document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
     document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true;
-    msg.innerHTML=html; }
-  function sdk(){ if(window.paypal) return Promise.resolve();
-    if(!sdkP) sdkP=new Promise(function(ok,no){ var s=document.createElement('script');
-      s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+CURRENCY+'&intent=capture';
-      s.onload=ok; s.onerror=function(){ sdkP=null; no(); }; document.head.appendChild(s); });
-    return sdkP; }
+    msg.innerHTML=html+joinLink(); }
+  function sdk(c){ var ns='pp'+c; if(window[ns]) return Promise.resolve(window[ns]);
+    if(!sdkP[c]) sdkP[c]=new Promise(function(ok,no){ var sc=document.createElement('script');
+      sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+c+'&intent=capture'; sc.setAttribute('data-namespace',ns);
+      sc.onload=function(){ ok(window[ns]); }; sc.onerror=function(){ sdkP[c]=null; no(); }; document.head.appendChild(sc); });
+    return sdkP[c]; }
   var cur=-1;
   function pick(i){ cur=i; var t=TIERS[i];
     list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; pp.hidden=true; msg.innerHTML='';
-    go.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth(); if(!cred) showGoogle();
+    go.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth(); if(!cred) showLogin();
     document.getElementById('sel-name').textContent='Aegis-Anti-Cheat \u2014 '+t.name+'';
-    document.getElementById('sel-price').textContent=money(t.price); document.getElementById('sel-total').textContent=money(t.price); }
+    loadQuote(); showPrice(); }
   function startPay(){ var t=TIERS[cur], label='Aegis-Anti-Cheat \u2014 '+t.name+'', addr=email.value.trim();
-    if(!cred){ msg.textContent='Please sign in with Google first.'; return; }
+    if(!cred){ msg.textContent='Please sign in first.'; return; }
     if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
     go.disabled=true; inv.disabled=true; msg.textContent='Loading secure checkout\u2026';
-    sdk().then(function(){ msg.textContent=''; go.hidden=true; inv.hidden=true; gout.hidden=true; pp.hidden=false;
-      btns=paypal.Buttons({
+    sdk(curSel.value).then(function(P){ msg.textContent=''; go.hidden=true; inv.hidden=true; gout.hidden=true; pp.hidden=false; curSel.disabled=true;
+      btns=P.Buttons({
         style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
         createOrder:function(data,a){
-          return fetch(API_BASE+'/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred})})
+          return fetch(API_BASE+'/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
             .then(function(r){ if(r.status===401){ expired=true; throw new Error('signin'); } if(!r.ok) throw new Error('order'); return r.json(); }).then(function(o){ return o.id; }); },
         onApprove:function(data,a){
           var cap=fetch(API_BASE+'/api/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID})})
@@ -465,20 +499,20 @@ function polyInit(card,t){
           return cap.then(function(o){
             finish('<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+String(o.id).replace(/</g,'&lt;')+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your payment details, then your licence and next steps.'); }); },
         onCancel:function(){ msg.textContent='Payment cancelled. You have not been charged.'; },
-        onError:function(){ if(expired){ cred=''; syncAuth(); try{ btns.close(); }catch(e){} pp.innerHTML=''; pp.hidden=true; go.hidden=false; gout.hidden=true; showGoogle(); msg.textContent='Your Google sign-in expired. Please sign in again.'; return; }
+        onError:function(){ if(expired){ cred=''; syncAuth(); try{ btns.close(); }catch(e){} pp.innerHTML=''; pp.hidden=true; go.hidden=false; gout.hidden=true; showLogin(); msg.textContent='Your sign-in expired. Please sign in again.'; return; }
           msg.innerHTML='Something went wrong with PayPal. You have not been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; }
       }); btns.render('#pp');
     }).catch(function(){ syncAuth(); go.hidden=false; inv.hidden=!OFFER_INVOICE; gout.hidden=false; msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
   }
   function sendInvoice(){ var t=TIERS[cur], addr=email.value.trim();
-    if(!cred){ msg.textContent='Please sign in with Google first.'; return; }
+    if(!cred){ msg.textContent='Please sign in first.'; return; }
     if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
     go.disabled=true; inv.disabled=true; msg.textContent='Sending your PayPal invoice\u2026';
-    fetch(API_BASE+'/api/request-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred})})
-      .then(function(r){ if(r.status===401){ cred=''; syncAuth(); showGoogle(); throw new Error('signin'); } if(!r.ok) throw new Error('invoice'); return r.json(); })
+    fetch(API_BASE+'/api/request-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
+      .then(function(r){ if(r.status===401){ cred=''; syncAuth(); showLogin(); throw new Error('signin'); } if(!r.ok) throw new Error('invoice'); return r.json(); })
       .then(function(o){ if(o.status!=='INVOICE_SENT') throw new Error('status');
         finish('<b style="color:#fff;font-size:18px">Invoice sent \u2014 check your email</b><br>PayPal has emailed an invoice for Aegis-Anti-Cheat \u2014 '+esc(t.name)+' to '+esc(addr)+'. Open it and pay on paypal.com (with PayPal, or by card without an account). Once it is paid we will email you the payment details, then your licence and next steps.'); })
-      .catch(function(e){ syncAuth(); if(String(e.message)==='signin') msg.textContent='Your Google sign-in expired. Please sign in again.'; else msg.innerHTML='Could not send the invoice. Nothing has been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; });
+      .catch(function(e){ syncAuth(); if(String(e.message)==='signin') msg.textContent='Your sign-in expired. Please sign in again.'; else msg.innerHTML='Could not send the invoice. Nothing has been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; });
   }
   inv.addEventListener('click',sendInvoice);
   document.getElementById('buy-open').addEventListener('click',function(){ reset(); d.showModal(); });
@@ -487,6 +521,8 @@ function polyInit(card,t){
   go.addEventListener('click',startPay);
   d.addEventListener('click',function(e){ if(e.target===d||e.target.closest('.buy-x')) d.close(); });
   d.addEventListener('close',reset);
+  (function(){ var a=document.getElementById('join-discord'); if(a&&/^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)){ a.href=DISCORD_INVITE; a.style.display=''; } })();
+  takeReturn();
 })();
 </script>
 </body></html>
