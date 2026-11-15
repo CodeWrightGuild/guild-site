@@ -270,7 +270,7 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
       <button class="go" id="go" type="button">Continue to PayPal</button>
       <div id="pp" hidden></div>
       <button class="go alt" id="inv" type="button">Email me a PayPal invoice instead</button>
-      <p class="fine">Sign-in is handled by Discord, GitHub or PayPal, and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your account email and you pay it on paypal.com.</p>
+      <p class="fine">Sign-in is handled by Google (or Discord, GitHub or PayPal where offered), and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your account email and you pay it on paypal.com.</p>
       <p class="msg" id="msg" role="status"></p>
     </div>
   </div>
@@ -282,6 +282,7 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
       In FEATURES each row is [label, [4 values], optional [4 bracket tags], optional [4 hover explanations]]: use '✓' for included, '' for not included, or text. */
 var PAYPAL_CLIENT_ID='BAARB36opW9SaGlzZYwjdztTSLPklXMJF407iq2TGVrd1PfRC_DnX8V1tVGYejXEbgSH2ohDvz-2T_XHWE';   /* the Client ID is meant to be public; NEVER put your PayPal Secret in this file */
 var API_BASE='https://wichita-publicly-textbooks-carolina.trycloudflare.com';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
+var GOOGLE_CLIENT_ID='YOUR_GOOGLE_CLIENT_ID';   /* console.cloud.google.com > APIs & Services > Credentials > Create credentials > OAuth client ID > Web application. The Client ID is public by design. NEVER put the Client Secret here (GIS does not need one in the browser). Under "Authorized JavaScript origins" add this site's origin exactly, e.g. https://yourname.github.io or https://codewrightguild.com (no path, no trailing slash). The same ID must be set as GOOGLE_CLIENT_ID on your payment server so it can check who the token was issued for. */
 var DISCORD_CLIENT_ID='YOUR_DISCORD_CLIENT_ID';   /* discord.com/developers/applications > your app > OAuth2 > Client ID. It is public by design. NEVER put the Client Secret here. Add this page's address under OAuth2 > Redirects. */
 var GITHUB_CLIENT_ID='YOUR_GITHUB_CLIENT_ID';   /* GitHub > Settings > Developer settings > OAuth Apps > Client ID. Public. The Client SECRET goes only in .env on your PC. */
 var PAYPAL_LOGIN=false;   /* true = also show "Continue with PayPal" (needs Log in with PayPal enabled on your PayPal app and PAYPAL_LOGIN=on in .env) */
@@ -429,6 +430,21 @@ function polyInit(card,t){
   function redirectUri(){ return location.origin+location.pathname; }
   function rnd(){ var a=new Uint8Array(16); crypto.getRandomValues(a); return Array.prototype.map.call(a,function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); }
   function joinLink(){ return /^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)?'<br><a href="'+DISCORD_INVITE+'" target="_blank" rel="noopener" style="color:#34e0b8">Join our Discord</a> for support and updates.':''; }
+  /* ---- Google sign-in (Google Identity Services). Google gives the browser a signed ID token (a JWT); the payment server verifies it and returns our own session + the verified email ---- */
+  function completeLogin(prov,val){ msg.textContent='Signing you in\u2026';
+    fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(){ msg.textContent='Sign-in failed. Make sure your account has a verified email, then try again.'; syncAuth(); }); }
+  var gsiP=null, gsiInit=false;
+  function loadGsi(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve();
+    if(!gsiP) gsiP=new Promise(function(ok,no){ var sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true; sc.defer=true;
+      sc.onload=function(){ ok(); }; sc.onerror=function(){ gsiP=null; no(); }; document.head.appendChild(sc); });
+    return gsiP; }
+  function onGoogle(resp){ if(!resp||!resp.credential){ msg.textContent='Google sign-in was cancelled.'; return; } completeLogin('google',resp.credential); }
+  function renderGoogle(host){
+    loadGsi().then(function(){
+      if(!gsiInit){ google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:false,cancel_on_tap_outside:true}); gsiInit=true; }
+      var w=Math.max(200,Math.min(400,Math.round(gbtn.clientWidth||320)));
+      google.accounts.id.renderButton(host,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'rectangular',logo_alignment:'left',width:w});
+    }).catch(function(){ host.innerHTML='<p>Could not load Google sign-in. Check your connection or ad-blocker and try again.</p>'; }); }
   function startLogin(prov){ var st=rnd(), r=encodeURIComponent(redirectUri()), url;
     if(prov==='test'){ msg.textContent='Signing you in\u2026';   /* TEMPORARY sandbox test login: delete before going live */
       fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})})
@@ -440,14 +456,15 @@ function polyInit(card,t){
     else if(prov==='github') url='https://github.com/login/oauth/authorize?client_id='+encodeURIComponent(GITHUB_CLIENT_ID)+'&scope='+encodeURIComponent('user:email')+'&redirect_uri='+r+'&state='+st;
     else url='https://www.'+(PAYPAL_MODE==='live'?'':'sandbox.')+'paypal.com/signin/authorize?flowEntry=static&client_id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&response_type=code&scope='+encodeURIComponent('openid email')+'&redirect_uri='+r+'&state='+st;
     location.href=url; }
-  function showLogin(){ gbtn.innerHTML=''; var opts=[];
+  function showLogin(){ gbtn.innerHTML=''; var opts=[], gOn=GOOGLE_CLIENT_ID.indexOf('YOUR_')!==0;
+    if(gOn){ var gh=document.createElement('div'); gh.id='g-host'; gh.style.cssText='margin:0 0 8px;min-height:44px'; gbtn.appendChild(gh); renderGoogle(gh); }
     if(DISCORD_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['discord','Continue with Discord','#5865F2']);
     if(GITHUB_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['github','Continue with GitHub','#24292f']);
     if(PAYPAL_LOGIN&&PAYPAL_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['paypal','Continue with PayPal','#0070ba']);
     if(PAYPAL_MODE==='sandbox') opts.push(['test','Test sign-in (sandbox only)','#6b7280']);   /* TEMPORARY: delete before going live */
-    if(!opts.length){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
+    if(!opts.length&&!gOn){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
     opts.forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.className='go'; b.style.cssText='background:'+o[2]+';color:#fff;border-color:'+o[2]+';margin:0 0 8px'; b.textContent=o[1]; b.addEventListener('click',function(){ startLogin(o[0]); }); gbtn.appendChild(b); }); }
-  gout.addEventListener('click',function(){ cred=''; email.value=''; syncAuth(); showLogin(); });
+  gout.addEventListener('click',function(){ cred=''; email.value=''; try{ if(window.google&&google.accounts&&google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){} syncAuth(); showLogin(); });
   /* coming back from Discord (token in the # part) or GitHub / PayPal (a one-time code in the ? part) */
   function takeReturn(){ var q=new URLSearchParams(location.search), h=new URLSearchParams(location.hash.replace(/^#/,'')), st=q.get('state')||h.get('state')||''; if(!st) return;
     var saved='', prov='', ti=-1; try{ saved=sessionStorage.getItem('aeg_state')||''; prov=sessionStorage.getItem('aeg_prov')||''; ti=parseInt(sessionStorage.getItem('aeg_tier'),10); wantCur=sessionStorage.getItem('aeg_cur')||''; ['aeg_state','aeg_prov','aeg_tier','aeg_cur'].forEach(function(k){ sessionStorage.removeItem(k); }); }catch(e){}
@@ -455,8 +472,7 @@ function polyInit(card,t){
     var val=prov==='discord'?h.get('access_token'):q.get('code'); history.replaceState(null,'',location.pathname);
     reset(); d.showModal(); if(!(ti>=0&&ti<TIERS.length)) ti=0; pick(ti);
     if(!val){ msg.textContent='Sign-in was cancelled.'; return; }
-    msg.textContent='Signing you in\u2026';
-    fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(){ msg.textContent='Sign-in failed. Make sure your account has a verified email, then try again.'; syncAuth(); }); }
+    completeLogin(prov,val); }
   /* ---- currencies: the server owns the prices and exchange rates; this is display only ---- */
   function dec(c){ return /^(HUF|JPY|TWD)$/.test(c)?0:2; }
   function fmtc(a,c){ try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:c,minimumFractionDigits:dec(c),maximumFractionDigits:dec(c)}).format(parseFloat(a)); }catch(e){ return a+' '+c; } }
