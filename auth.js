@@ -90,6 +90,8 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
 .cw-tab:hover{color:var(--ink)}\
 .cw-tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}\
 .cw-list{display:grid;gap:10px}\
+.cw-dashlink{margin-left:auto;align-self:center;font-size:13.5px;font-weight:600;color:var(--accent);text-decoration:none;padding:6px 4px}\
+.cw-dashlink:hover{text-decoration:underline}\
 .cw-prod{display:flex;align-items:center;gap:14px;width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;\
   background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;transition:all .22s var(--ease)}\
 .cw-prod:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}\
@@ -136,6 +138,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       $('.cw-login', slot).addEventListener('click', function () { openLogin('login'); });
       $('.cw-signup', slot).addEventListener('click', function () { openLogin('signup'); });
     }
+    try { window.dispatchEvent(new CustomEvent('cw-auth')); } catch (e) {}   /* lets pages such as dashboard.html react to sign-in / sign-out */
   }
 
   /* ───────── login dialog ───────── */
@@ -182,7 +185,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
         acct = { session: o.session, email: o.email, name: claims.name || '', picture: claims.picture || '' };
         saveAcct(); renderNav();
         loginDlg.close();
-        openProfile();
+        if (!window.CW_NO_PROFILE_ON_LOGIN) openProfile();
       })
       .catch(function (e) {
         console.error('[cw-auth] /api/login failed', e);
@@ -251,7 +254,8 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       '<div class="cw-who"><b>' + esc(acct.name || 'Your account') + '</b><span>' + esc(acct.email) + '</span></div></div>' +
       '<div class="cw-tabs" role="tablist">' +
       '<button class="cw-tab" role="tab" data-tab="products" aria-selected="true">Products</button>' +
-      '<button class="cw-tab" role="tab" data-tab="account" aria-selected="false">Account</button></div>' +
+      '<button class="cw-tab" role="tab" data-tab="account" aria-selected="false">Account</button>' +
+      '<a class="cw-dashlink" href="dashboard.html">Dashboard &rarr;</a></div>' +
       '<div id="cw-pane"></div></div>';
     $('.cw-x', profDlg).addEventListener('click', function () { profDlg.close(); });
     Array.prototype.forEach.call(profDlg.querySelectorAll('.cw-tab'), function (t) {
@@ -337,6 +341,8 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       '<div class="cw-soon">Feature list and licence details coming soon.</div>';
     $('.cw-back', pane).addEventListener('click', renderProducts);
   }
+
+  window.CWAuth = { get user() { return acct; }, signOut: signOut, openLogin: openLogin, openProfile: openProfile };
 
   /* ───────── mount ───────── */
   function mount() {

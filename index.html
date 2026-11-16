@@ -477,6 +477,7 @@ a.card-media{text-decoration:none}
   <div class="nav-right">
     <div class="nav-links">
       <a href="#catalogue">Catalogue</a>
+      <a href="dashboard.html">Dashboard</a>
       <a href="#why">Why us</a>
       <a href="#contact">Contact</a>
     </div>
@@ -526,11 +527,11 @@ a.card-media{text-decoration:none}
   <div class="grid">
     
       <article class="card product">
-      <a class="card-media" href="aegis-anti-cheat.html" aria-label="Open Aegis-Anti-Cheat"><span class="mono-mark">A</span></a>
+      <a class="card-media" href="aegis-anti-cheat.html" aria-label="Open Aegis-Anti-Cheat"><span class="aegis-logo" role="img" aria-label="Aegis-Anti-Cheat logo"></span></a>
       <div class="card-body">
         <div class="cat">Security &middot; Gaming</div>
         <h3><a href="aegis-anti-cheat.html">Aegis-Anti-Cheat</a></h3>
-        <p class="desc">Keep your game fair.</p>
+        <p class="desc">Keep your game fair. Aegis spots combat cheats like KillAura and TriggerBot, then alerts your staff or punishes automatically.</p>
         <div class="buy-row">
           <a class="btn btn-primary buy-btn" href="aegis-anti-cheat.html">View product <span class="arr">&rarr;</span></a>
         </div>
@@ -862,7 +863,7 @@ a.card-media{text-decoration:none}
       card.setAttribute('data-spot', '');   // cursor-following glow + border light
       card.setAttribute('data-tilt', '');   // gentle 3D tilt
       var media = card.querySelector('.card-media');
-      if (media && !media.querySelector('img') && !media.querySelector('.seal')) {
+      if (media && !media.querySelector('img') && !media.querySelector('.seal') && !media.querySelector('.aegis-logo')) {
         media.insertAdjacentHTML('afterbegin',
           '<svg class="seal" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' +
           '<circle class="base" cx="60" cy="60" r="52"/>' +
@@ -876,6 +877,7 @@ a.card-media{text-decoration:none}
   })();
 })();
 </script>
+<script src="aegis-logo.js" defer></script>
 <script src="auth.js" defer></script>
 </body></html>
 
