@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="transitions.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0e7a4e">
@@ -194,6 +195,56 @@ dialog.dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}
 .dlg-logo .aegis-logo{font-size:120px}
 @media (max-width:760px){.nav-links{display:none}.dash{padding-top:34px}.more-item{flex-wrap:wrap}.more-item .go{margin-left:0}}
 
+/* ═════════════ AEGIS PLAN VIEW ═════════════ */
+.tchip{display:inline-flex;align-items:center;gap:7px;font-weight:650;color:var(--ink)}
+.tchip i{width:9px;height:9px;border-radius:3px;background:var(--c,var(--accent));box-shadow:0 0 0 3px color-mix(in srgb,var(--c,var(--accent)) 22%,transparent);transform:rotate(45deg)}
+.agd-back{background:none;border:0;color:var(--muted);cursor:pointer;font:600 14px/1 inherit;font-family:inherit;padding:6px 0;margin:0 0 18px;transition:color .2s,transform .25s var(--ease)}
+.agd-back:hover{color:var(--accent);transform:translateX(-3px)}
+.agd-hero{position:relative;overflow:hidden;border-radius:24px;border:1px solid color-mix(in srgb,var(--c) 38%,#1b2a24);background:#05090b;color:#eef2f7;
+  display:flex;align-items:center;gap:clamp(18px,4vw,56px);padding:clamp(22px,4vw,46px);margin-bottom:34px;
+  --accent:var(--c);--accent-3:color-mix(in srgb,var(--c) 60%,#fff);--on-accent:#04110a;
+  box-shadow:0 26px 70px -30px color-mix(in srgb,var(--c) 55%,transparent)}
+.agd-hero>*:not(canvas){position:relative;z-index:1}
+.agd-logo-wrap{flex:none;line-height:0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.55))}
+.agd-logo-wrap .aegis-logo{font-size:clamp(170px,24vw,280px)}
+.agd-title small{display:block;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--c);font-weight:700;margin-bottom:8px}
+.agd-title h1{font-family:"Iowan Old Style",Georgia,serif;font-size:clamp(32px,5vw,54px);font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-bottom:14px}
+.agd-badges{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.agd-tier{display:inline-flex;align-items:center;gap:9px;padding:8px 16px;border-radius:99px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:#fff;font-weight:700;font-size:15px}
+.agd-tier i{width:10px;height:10px;border-radius:3px;background:var(--c);transform:rotate(45deg);box-shadow:0 0 14px var(--c)}
+.agd-hero .pill{background:rgba(255,255,255,.1);color:#d6f5e6}
+.agd-hero .pill.warn{background:rgba(251,146,60,.18);color:#fdba74}
+.agd-tag{color:#b8c4bd;font-size:15.5px;max-width:42ch}
+.agd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:46px}
+.agd-perk{border:1px solid var(--line);border-radius:16px;background:var(--card-bg);padding:18px 20px;position:relative;overflow:hidden;transition:transform .25s var(--ease),border-color .2s,box-shadow .3s}
+.agd-perk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.agd-perk:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--c) 50%,var(--line));box-shadow:var(--shadow)}
+.agd-perk span{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+.agd-perk b{display:block;font-family:"Iowan Old Style",Georgia,serif;font-size:26px;font-weight:600;letter-spacing:-.01em}
+.agd-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-bottom:46px;align-items:start}
+.agd-box{border:1px solid var(--line);border-radius:18px;background:var(--card-bg);padding:6px 22px}
+.agd-box h3{font-family:"Iowan Old Style",Georgia,serif;font-size:19px;font-weight:600;padding:16px 0 6px}
+.agd-list{list-style:none;margin:0;padding:0 0 10px}
+.agd-list li{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.agd-list li:first-child{border-top:0}
+.agd-list .ic{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;transform:translateY(3px)}
+.agd-list .on .ic{background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c)}
+.agd-list .off{color:var(--muted)}
+.agd-list .off .ic{background:var(--paper-2);color:var(--muted)}
+.agd-list .dt{margin-left:auto;color:var(--muted);font-size:13px;text-align:right;white-space:nowrap}
+.agd-list .off .dt{white-space:normal}
+.agd-meta{display:grid;grid-template-columns:auto 1fr;gap:10px 28px;font-size:14.5px;padding:8px 0 16px}
+.agd-meta dt{color:var(--muted)}.agd-meta dd{margin:0;word-break:break-all}
+.agd-lic{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.agd-lic code{flex:1;min-width:200px;padding:11px 14px;border-radius:11px;background:var(--paper-2);border:1px solid var(--line);font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;word-break:break-all}
+.agd-lic .btn{padding:10px 16px;font-size:13.5px}
+.agd-up{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 22px;border-radius:18px;border:1px dashed color-mix(in srgb,var(--c) 55%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--c) 10%,transparent),transparent 70%);margin-bottom:46px}
+.agd-up p{color:var(--muted);font-size:14.5px;max-width:54ch}.agd-up p b{color:var(--ink)}
+.agd-enter>*{animation:rise .55s var(--ease) both}
+.agd-enter>*:nth-child(2){animation-delay:.06s}.agd-enter>*:nth-child(3){animation-delay:.12s}.agd-enter>*:nth-child(4){animation-delay:.18s}.agd-enter>*:nth-child(5){animation-delay:.24s}
+@media (max-width:760px){.agd-hero{flex-direction:column;text-align:center}.agd-badges{justify-content:center}.agd-tag{margin:0 auto}}
+@media (prefers-reduced-motion:reduce){.agd-enter>*{animation:none}}
+
 /* ═════════════ REDUCED MOTION ═════════════ */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
@@ -224,6 +275,8 @@ a.card-media{text-decoration:none}
 
 <main class="dash"><div class="wrap" id="app" aria-live="polite"><div class="sk" style="min-height:120px"></div></div></main>
 <script src="tunnels.js"></script>
+<script src="aegis-data.js"></script>
+<script src="bedrock-bg.js"></script>
 <script>
 (function(){
   'use strict';
@@ -235,7 +288,7 @@ a.card-media{text-decoration:none}
       blurb: 'Keep your game fair. Spots combat cheats like KillAura and TriggerBot.' }
   ];
   var root = document.getElementById('app');
-  var state = { sess: null, data: null, err: '', loading: false, ticket: 0 };
+  var state = { sess: null, data: null, err: '', loading: false, ticket: 0, view: null, bg: null };
 
   function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function acct(){ try { var a = JSON.parse(localStorage.getItem(KEY) || 'null'); return a && a.session ? a : null; } catch (e) { return null; } }
@@ -248,7 +301,14 @@ a.card-media{text-decoration:none}
   }
   function normalise(p){
     return { product: p.product || p.name || 'Product', tier: p.tier || p.plan || '', date: p.date || p.purchased_at || p.created || '',
-             order: p.order || p.order_id || p.id || '', amount: p.amount || '', status: p.status || 'paid' };
+             order: p.order || p.order_id || p.id || '', amount: p.amount || '', status: p.status || 'paid',
+             licence: p.licence || p.license || p.licence_key || p.key || '' };
+  }
+  function tierDef(x){ return window.AegisData && /aegis/i.test(x.product) ? window.AegisData.tier(x.tier) : null; }
+  function tierChip(x){
+    if (!x.tier) return 'Purchased';
+    var t = tierDef(x);
+    return '<span class="tchip"' + (t ? ' style="--c:' + t.def.color + '"' : '') + '><i></i>' + esc(x.tier) + ' tier</span>';
   }
   function logoHtml(item){ return item && item.logo === 'aegis' ? '<span class="aegis-logo" role="img" aria-label="' + esc(item.name) + ' logo"></span>' : '<span class="avatar" style="border-radius:16px">' + esc((item ? item.name : '?').charAt(0)) + '</span>'; }
   function initLogos(){ if (window.AegisLogo) window.AegisLogo.init(); }
@@ -281,12 +341,13 @@ a.card-media{text-decoration:none}
 
   function signOut(){
     if (window.CWAuth) window.CWAuth.signOut(); else { try { localStorage.removeItem(KEY); } catch (e) {} }
-    state.sess = null; state.data = null;
+    state.sess = null; state.data = null; state.view = null;
   }
   function click(sel){ var b = document.querySelector(sel); if (b) b.click(); }
 
   /* ---------- drawing ---------- */
   function draw(){
+    if (state.bg) { state.bg.destroy(); state.bg = null; }
     var a = state.sess;
     if (!a) {
       root.innerHTML =
@@ -311,6 +372,7 @@ a.card-media{text-decoration:none}
         '<p>It may be offline for a moment. Try again in a minute.</p><div class="row"><button class="btn btn-primary" type="button" data-act="retry">Try again</button></div></div>';
       return;
     }
+    if (state.view != null && state.data && state.data.purchases[state.view]) { drawDetail(state.data.purchases[state.view]); return; }
     var d = state.data || { purchases: [], perks: [] }, list = d.purchases;
     var last = list.length ? fmtDate(list[0].date) : '';
     var ledger = '<div class="ledger"><span><b>' + list.length + '</b> ' + (list.length === 1 ? 'product' : 'products') + ' owned</span>' +
@@ -323,7 +385,7 @@ a.card-media{text-decoration:none}
         var item = find(x.product), bad = /fail|refund|cancel|dispute/i.test(x.status);
         return '<button class="own" type="button" data-i="' + i + '"><span class="own-media">' + logoHtml(item) + '</span>' +
           '<span class="own-body"><h3>' + esc(item ? item.name : x.product) + '</h3><span class="own-meta"><span>' +
-          esc(x.tier ? x.tier + ' tier' : 'Purchased') + (x.date ? ' &middot; ' + esc(fmtDate(x.date)) : '') + '</span>' +
+          tierChip(x) + (x.date ? ' &middot; ' + esc(fmtDate(x.date)) : '') + '</span>' +
           '<span class="pill' + (bad ? ' warn' : '') + '">' + esc(x.status) + '</span></span></span></button>';
       }).join('') + '</div>';
     } else {
@@ -338,6 +400,7 @@ a.card-media{text-decoration:none}
 
     root.innerHTML = head + ledger + owned + perks + moreSection(Object.keys(ownedKeys));
     initLogos();
+    if (state.view != null) state.view = null;
   }
 
   function moreSection(ownedKeys){
@@ -348,33 +411,96 @@ a.card-media{text-decoration:none}
     }).join('') + '</div>';
   }
 
-  /* ---------- product details dialog ---------- */
-  var dlg = null;
-  function openDetail(x){
-    var item = find(x.product);
-    if (!dlg) { dlg = document.createElement('dialog'); dlg.className = 'dlg'; document.body.appendChild(dlg);
-      dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); }); }
-    dlg.innerHTML = '<div class="dlg-body"><button class="dlg-x" type="button" aria-label="Close">&times;</button>' +
-      '<div class="dlg-logo">' + logoHtml(item) + '</div><h3>' + esc(item ? item.name : x.product) + '</h3><dl>' +
+  /* ---------- product view: tier, perks, features ---------- */
+  function mask(k){ k = String(k); return k.length > 4 ? k.slice(0, -4).replace(/[A-Za-z0-9]/g, '\u2022') + k.slice(-4) : k; }
+
+  function drawDetail(x){
+    var item = find(x.product), t = tierDef(x), c = t ? t.def.color : '#34e0b8';
+    var bad = /fail|refund|cancel|dispute/i.test(x.status);
+    var h = '<div class="agd-enter">' +
+      '<button class="agd-back" type="button" data-act="back">&larr; All products</button>' +
+      '<section class="agd-hero" style="--c:' + c + '"><span class="agd-logo-wrap">' + logoHtml(item) + '</span>' +
+      '<div class="agd-title"><small>Your plan</small><h1>' + esc(item ? item.name : x.product) + '</h1>' +
+      '<div class="agd-badges">' +
+      (x.tier ? '<span class="agd-tier"><i></i>' + esc(x.tier) + ' tier</span>' : '') +
+      '<span class="pill' + (bad ? ' warn' : '') + '">' + esc(x.status) + '</span></div>' +
+      (t ? '<p class="agd-tag">' + esc(t.def.tagline) + ' &middot; $' + t.def.price + ' plan</p>' : '') + '</div></section>';
+
+    if (t) {
+      h += '<div class="sec-h"><h2>Your perks</h2><p>What the ' + esc(t.def.name) + ' tier gives you</p></div><div class="agd-grid" style="--c:' + c + '">' +
+        t.perks.map(function (p) { return '<div class="agd-perk"><span>' + esc(p.name) + '</span><b>' + esc(p.value) + '</b></div>'; }).join('') + '</div>';
+    }
+
+    h += '<div class="agd-cols" style="--c:' + c + '">';
+    if (t) {
+      h += '<div class="agd-box"><h3>Included in ' + esc(t.def.name) + '</h3><ul class="agd-list">' + t.features.yes.map(function (f) {
+        return '<li class="on"><span class="ic">&#10003;</span><span>' + esc(f.label) + '</span>' + (f.detail ? '<span class="dt">' + esc(f.detail) + '</span>' : '') + '</li>';
+      }).join('') + '</ul></div>';
+      if (t.features.no.length) {
+        h += '<div class="agd-box"><h3>Not on your tier</h3><ul class="agd-list">' + t.features.no.map(function (f) {
+          var from = window.AegisData.tiers[f.firstTier];
+          return '<li class="off"><span class="ic">&times;</span><span>' + esc(f.label) + '</span>' + (from ? '<span class="dt">from ' + esc(from.name) + '</span>' : '') + '</li>';
+        }).join('') + '</ul></div>';
+      }
+    }
+    h += '<div class="agd-box"><h3>Purchase details</h3><dl class="agd-meta">' +
       (x.tier ? '<dt>Tier</dt><dd>' + esc(x.tier) + '</dd>' : '') +
       (x.date ? '<dt>Purchased</dt><dd>' + esc(fmtDate(x.date)) + '</dd>' : '') +
       (x.amount ? '<dt>Paid</dt><dd>' + esc(x.amount) + '</dd>' : '') +
       (x.order ? '<dt>Order ID</dt><dd>' + esc(x.order) + '</dd>' : '') +
       '<dt>Status</dt><dd>' + esc(x.status) + '</dd></dl>' +
-      '<div class="soon">Feature list and licence details coming soon.</div>' +
-      (item ? '<a class="btn btn-primary" style="width:100%" href="' + esc(item.url) + '">Open product page</a>' : '') + '</div>';
-    dlg.querySelector('.dlg-x').addEventListener('click', function () { dlg.close(); });
-    dlg.showModal(); initLogos();
+      (x.licence ? '<div class="agd-lic"><code id="agd-key" data-k="' + esc(x.licence) + '" data-hidden="1">' + esc(mask(x.licence)) + '</code>' +
+        '<button class="btn btn-ghost" type="button" data-act="key-show">Reveal</button><button class="btn btn-ghost" type="button" data-act="key-copy">Copy</button></div>' : '') +
+      '</div></div>';
+
+    if (t && state.data && t.index < window.AegisData.tiers.length - 1) {
+      var nx = window.AegisData.tiers[t.index + 1];
+      h += '<div class="agd-up" style="--c:' + nx.color + '"><p><b>Need more?</b> ' + esc(nx.name) + ' (' + esc(nx.tagline.toLowerCase()) + ') unlocks more servers, faster verdicts and extra tools.</p>' +
+        '<a class="btn btn-primary" href="' + (item ? esc(item.url) : 'index.html#catalogue') + '">Compare tiers <span class="arr">&rarr;</span></a></div>';
+    }
+    h += (item ? '<a class="btn btn-ghost" href="' + esc(item.url) + '">Open product page</a>' : '') + '</div>';
+
+    root.innerHTML = h;
+    initLogos();
+    if (window.BedrockBG) state.bg = BedrockBG.mount(root.querySelector('.agd-hero'), { dim: .5, glow: c });
   }
+
+  function showDetail(i, el){
+    var from = el && el.querySelector ? el.querySelector('.aegis-logo') : null;
+    function go(){ state.view = i; draw(); window.scrollTo(0, 0); }
+    try { history.pushState({ v: i }, '', '#product'); } catch (e) {}
+    if (window.CWTransition) CWTransition.run(go, { logo: from, logoAfter: function () { return document.querySelector('.agd-hero .aegis-logo'); } });
+    else go();
+  }
+  function closeDetail(){
+    var i = state.view, before = document.querySelector('.agd-hero .aegis-logo');
+    function go(){ state.view = null; draw(); }
+    if (window.CWTransition) CWTransition.run(go, { logo: before, logoAfter: function () { return document.querySelector('.own[data-i="' + i + '"] .aegis-logo'); } });
+    else go();
+  }
+  window.addEventListener('popstate', function () { if (state.view != null) closeDetail(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.view != null) { if (location.hash === '#product') history.back(); else closeDetail(); } });
 
   root.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-act],[data-i]') : null;
     if (!b) return;
-    if (b.hasAttribute('data-i')) { openDetail(state.data.purchases[+b.getAttribute('data-i')]); return; }
+    if (b.hasAttribute('data-i')) { showDetail(+b.getAttribute('data-i'), b); return; }
     var act = b.getAttribute('data-act');
     if (act === 'login') click('#cw-auth .cw-login');
     else if (act === 'signup') click('#cw-auth .cw-signup');
     else if (act === 'retry') load();
+    else if (act === 'back') { if (location.hash === '#product') history.back(); else closeDetail(); }
+    else if (act === 'key-show') {
+      var k = document.getElementById('agd-key'); if (!k) return;
+      var hid = k.getAttribute('data-hidden') === '1';
+      k.textContent = hid ? k.getAttribute('data-k') : mask(k.getAttribute('data-k')); k.setAttribute('data-hidden', hid ? '0' : '1');
+      b.textContent = hid ? 'Hide' : 'Reveal';
+    }
+    else if (act === 'key-copy') {
+      var kk = document.getElementById('agd-key'); if (!kk) return;
+      var txt = kk.getAttribute('data-k');
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1400); }, function () { b.textContent = 'Press Ctrl+C'; });
+    }
   });
 
   /* ---------- keep in step with auth.js ---------- */

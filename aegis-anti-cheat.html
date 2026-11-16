@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
+<script src="transitions.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Aegis-Anti-Cheat by Codewright Guild">
@@ -135,8 +136,23 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
 .rows .info:hover+.tip,.rows .info:focus+.tip{display:block}
 .pick:hover{box-shadow:0 8px 28px -10px var(--c);background:var(--c);border-color:var(--c)}
 .st-meta{font-size:12.5px;color:#6f7a88;text-align:center;margin-top:6px}
+
+/* hero logo + Bedrock background */
+main{gap:clamp(20px,5vw,80px);justify-content:space-between}
+.hero-logo{flex:none;margin-left:auto;font-size:clamp(240px,34vw,470px);line-height:0;
+  --accent:#34e0b8;--accent-3:#7af0d4;--on-accent:#04110a;filter:drop-shadow(0 30px 60px rgba(0,0,0,.55))}
+.hero-logo .aegis-logo{view-transition-name:aegis-logo}
+.copy{animation:heroIn .8s cubic-bezier(.2,.7,.2,1) .12s both}
+.hero-logo{animation:heroLogoIn 1s cubic-bezier(.2,.7,.2,1) .05s both}
+@keyframes heroIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes heroLogoIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@media (max-width:900px){main{flex-direction:column;justify-content:center;padding-top:84px;padding-bottom:40px}
+  .hero-logo{order:-1;margin:0 auto;font-size:min(78vw,320px)}}
+@media (prefers-reduced-motion:reduce){.copy,.hero-logo{animation:none}}
 </style></head>
 <body>
+<script>var BEDROCK_BG=true;   /* true = animated Bedrock background, false = the original silk ribbon */
+if(BEDROCK_BG) window.AEGIS_BEDROCK=1;</script>
 <canvas id="bg" aria-hidden="true"></canvas>
 <nav><a href="./#catalogue">&larr; Codewright Guild</a></nav>
 <main><div class="copy">
@@ -150,7 +166,8 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
     <a class="btn" href="#statistics">Statistics</a>
     <a class="btn" href="./#catalogue">Back to catalogue</a>
   </div>
-</div></main>
+</div>
+<div class="hero-logo"><span class="aegis-logo" role="img" aria-label="Aegis-Anti-Cheat logo"></span></div></main>
 <section class="stats-sec" id="statistics" aria-labelledby="st-h">
   <h2 id="st-h">Detection statistics</h2>
   <p class="sub">How often each check fires at each detection strength.</p>
@@ -162,6 +179,7 @@ dialog.buy{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#2a323d transp
 /* PS3-style silk ribbon. Shape + greys are measured from the reference image.
    Tweak: BIG (ribbon thickness), ARCH (how much it arches), Q (quality), the t* numbers (speed) */
 (function(){
+  if(window.AEGIS_BEDROCK){ var oc=document.getElementById('bg'); if(oc) oc.style.display='none'; return; }
   var c=document.getElementById('bg'), x=c.getContext('2d',{alpha:false});
   var w=0,h=0,n=0,t=0,last=0,GF,GS,BG,GL,Y=[],C,Hh,P=[], Q=.8, STEP=10, K=7, ARCH=1.25, BIG=1.4, i;
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -541,5 +559,10 @@ function polyInit(card,t){
   (function(){ var a=document.getElementById('join-discord'); if(a&&/^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)){ a.href=DISCORD_INVITE; a.style.display=''; } })();
   takeReturn();
 })();
+</script>
+<script src="aegis-logo.js" defer></script>
+<script src="bedrock-bg.js" defer></script>
+<script>
+if(window.AEGIS_BEDROCK) window.addEventListener("DOMContentLoaded",function(){ if(window.BedrockBG) BedrockBG.mount(null,{dim:.5,glow:"#34e0b8"}); });
 </script>
 </body></html>
