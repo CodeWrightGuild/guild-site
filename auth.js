@@ -163,14 +163,23 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
     fetch(API_BASE + '/api/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider: 'google', value: resp.credential })
-    }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (o) {
+    }).then(function (r) {
+      if (!r.ok) { var e = new Error('http'); e.status = r.status; throw e; }
+      return r.json();
+    }).then(function (o) {
         acct = { session: o.session, email: o.email, name: claims.name || '', picture: claims.picture || '' };
         saveAcct(); renderNav();
         loginDlg.close();
         openProfile();
       })
-      .catch(function () { setMsg('Sign-in failed. Make sure your Google account has a verified email, then try again.', true); });
+      .catch(function (e) {
+        console.error('[cw-auth] /api/login failed', e);
+        if (e && e.status) {
+          setMsg('The server rejected the sign-in (error ' + e.status + '). Make sure your Google account has a verified email, then try again.', true);
+        } else {
+          setMsg('Can\u2019t reach the Codewright server right now (it may be offline, or blocking this site). Please try again later.', true);
+        }
+      });
   }
 
   function openLogin(mode) {
