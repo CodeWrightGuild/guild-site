@@ -281,7 +281,7 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
     <div id="checkout" class="checkout" hidden>
       <button class="back" type="button">&larr; Change tier</button>
       <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-      <label for="buyer-email">Your account (your receipt and licence details are sent to its verified email)</label>
+      <label for="buyer-email">Your account (your licence is tied to this account; we email it to its verified address). You choose how to pay inside PayPal's own window, so your PayPal login does not have to match this email.</label>
       <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in below">
       <div id="g-wrap"><div id="g-btn"></div></div>
       <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
@@ -289,8 +289,8 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
       <div class="total"><span id="tot-lab">Total (USD)</span><span id="sel-total"></span></div>
       <button class="go" id="go" type="button">Continue to PayPal</button>
       <div id="pp" hidden></div>
-      <button class="go alt" id="inv" type="button">Email me a PayPal invoice instead</button>
-      <p class="fine">Sign-in is handled by Google (or Discord, GitHub or PayPal where offered), and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account. Prefer an invoice? PayPal emails it to your account email and you pay it on paypal.com.</p>
+      <button class="go alt" id="inv" type="button" hidden style="display:none">Email me a PayPal invoice instead</button>
+      <p class="fine">Sign-in is handled by Google (or Discord, GitHub or PayPal where offered), and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account.</p>
       <p class="msg" id="msg" role="status"></p>
     </div>
   </div>
@@ -322,7 +322,7 @@ var GITHUB_CLIENT_ID='YOUR_GITHUB_CLIENT_ID';   /* GitHub > Settings > Developer
 var PAYPAL_LOGIN=false;   /* true = also show "Continue with PayPal" (needs Log in with PayPal enabled on your PayPal app and PAYPAL_LOGIN=on in .env) */
 var PAYPAL_MODE='sandbox';   /* 'sandbox' while testing, 'live' for real money (must match PAYPAL_ENV in .env) */
 var DISCORD_INVITE='';   /* your permanent Discord invite, e.g. 'https://discord.gg/yourcode'. Empty = no "Join our Discord" button. */
-var OFFER_INVOICE=true;   /* true = also show "Email me a PayPal invoice instead". false = card/PayPal checkout only. */
+var OFFER_INVOICE=false;   /* off: an invoice has to be addressed to an email, and your Google email is not necessarily the one on the buyer's PayPal. Payment is PayPal's own checkout only. */
 var CURRENCY='USD';   /* the currency preselected at checkout; customers can change it */
 var TIERS=[
   {name:'Starter', price:20,  tagline:'Small servers',   color:'#34e0b8', shape:'tetra'},
