@@ -106,7 +106,9 @@ nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);
 .logo-img{display:block;flex:none;width:40px;height:40px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%230f8a56%22/%3E%3Cstop offset=%221%22 stop-color=%22%233cc878%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22url(%23g)%22/%3E%3Cg fill=%22none%22 stroke=%22%23fff%22 stroke-width=%225.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 9 L12 18 L21 27%22/%3E%3Cpath d=%22M43 9 L52 18 L43 27%22/%3E%3Cpath d=%22M36 7.5 L28 28.5%22/%3E%3C/g%3E%3Cpath fill=%22%23fff%22 d=%22M6 40 C13 40 18 36 24 36 H58 V44 H48 C48 48 45 51 42 52 V54 H50 V59 H14 V54 H22 V52 C19 51 16 48 16 44 H14 C10 44 7 42 6 40 Z%22/%3E%3C/svg%3E") center/contain no-repeat;transition:transform .4s var(--ease)}
 .logo:hover .logo-img{transform:rotate(-6deg) scale(1.06)}
 .foot-brand .logo-img{width:52px;height:52px}
-.nav-right{display:flex;align-items:center;gap:22px}
+.nav-left{display:flex;align-items:center;gap:34px;min-width:0}
+.nav-auth-slot{display:flex;align-items:center}
+.nav-right{display:flex;align-items:center;gap:22px;margin-left:auto}
 .nav-links{display:flex;gap:30px;align-items:center}
 .nav-links a{position:relative;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color .15s;padding:4px 0}
 .nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;border-radius:2px;
@@ -474,14 +476,16 @@ a.card-media{text-decoration:none}
 <div class="progress" aria-hidden="true"></div>
 
 <nav><div class="wrap nav-inner">
-  <a href="./" class="logo"><span class="logo-img" role="img" aria-label="Codewright Guild logo"></span><span>Codewright Guild</span></a>
-  <div class="nav-right">
-    <div class="nav-links">
+  <div class="nav-left"><a href="./" class="logo"><span class="logo-img" role="img" aria-label="Codewright Guild logo"></span><span>Codewright Guild</span></a>
+  <div class="nav-links">
       <a href="#catalogue">Catalogue</a>
       <a href="dashboard.html">Dashboard</a>
       <a href="#why">Why us</a>
       <a href="#contact">Contact</a>
     </div>
+  <div class="nav-auth-slot"></div></div>
+  <div class="nav-right">
+    
     <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle colour theme">
       <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>

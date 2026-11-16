@@ -255,6 +255,11 @@ a.card-media{text-decoration:none}
 
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
+
+.own-key{display:block;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.own-key code{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.own-key.wait,.agd-wait{font-style:italic}
+.agd-wait{color:var(--muted);font-size:13.5px;margin:12px 0 0}
 </style>
 </head>
 <body>
@@ -317,8 +322,17 @@ a.card-media{text-decoration:none}
     return Tunnels.fetch('perks', path, { credential: state.sess.session });
   }
 
-  function load(){
-    var t = ++state.ticket; state.loading = true; state.err = ''; state.data = null; draw();
+  var pollT = 0;
+  function pending(){ try { return JSON.parse(localStorage.getItem('cw-pending') || 'null'); } catch (e) { return null; } }
+  function unfinished(d){
+    var pe = pending(); if (pe && Date.now() - pe.ts > 24 * 3600e3) { try { localStorage.removeItem('cw-pending'); } catch (e) {} pe = null; }
+    var seen = false;
+    var open = d.purchases.some(function (x) { if (pe && String(x.order) === String(pe.order)) seen = true; return !/fail|refund|cancel|dispute|revers|void|expire/i.test(x.status) && (!/paid|complete|active|issued|success/i.test(x.status) || !x.licence); });
+    return open || (pe && !seen);
+  }
+  function load(silent){
+    clearTimeout(pollT);
+    var t = ++state.ticket; if (silent !== true) { state.loading = true; state.err = ''; state.data = null; draw(); }
     api('/api/purchases').then(function (r) {
       if (r.status === 401) { var e = new Error('expired'); e.expired = true; throw e; }
       if (r.status === 404) return { purchases: [] };
@@ -329,9 +343,12 @@ a.card-media{text-decoration:none}
         .then(function (k) { return { purchases: (o.purchases || []).map(normalise).reverse(), perks: (k && k.perks) || [] }; });
     }).then(function (d) {
       if (t !== state.ticket) return;
-      state.data = d; state.loading = false; draw();
+      var changed = !state.data || JSON.stringify(state.data) !== JSON.stringify(d);
+      state.data = d; state.loading = false; if (silent !== true || changed) draw();   /* silent refreshes only redraw when something changed */
+      if (unfinished(d)) pollT = setTimeout(function () { if (state.sess) load(true); }, 5000);   /* order still being confirmed / licence not issued yet: keep asking the pay server */
     }).catch(function (e) {
       if (t !== state.ticket) return;
+      if (silent === true) { pollT = setTimeout(function () { if (state.sess) load(true); }, 8000); return; }
       state.loading = false;
       if (e && e.expired) { signOut(); state.err = 'expired'; }
       else state.err = 'offline';
@@ -372,8 +389,9 @@ a.card-media{text-decoration:none}
         '<p>It may be offline for a moment. Try again in a minute.</p><div class="row"><button class="btn btn-primary" type="button" data-act="retry">Try again</button></div></div>';
       return;
     }
-    if (state.view != null && state.data && state.data.purchases[state.view]) { drawDetail(state.data.purchases[state.view]); return; }
-    var d = state.data || { purchases: [], perks: [] }, list = d.purchases;
+    var d = state.data || { purchases: [], perks: [] }, list = d.purchases, pe = pending();
+    if (pe && !list.some(function (x) { return String(x.order) === String(pe.order); })) list = [{ product: pe.product || 'Aegis-Anti-Cheat', tier: pe.tier || '', date: new Date(pe.ts).toISOString(), order: pe.order, amount: '', status: 'confirming payment', licence: '' }].concat(list);
+    if (state.view != null && list[state.view]) { drawDetail(list[state.view]); return; }
     var last = list.length ? fmtDate(list[0].date) : '';
     var ledger = '<div class="ledger"><span><b>' + list.length + '</b> ' + (list.length === 1 ? 'product' : 'products') + ' owned</span>' +
       (last ? '<span>Latest purchase <b>' + esc(last) + '</b></span>' : '') +
@@ -386,7 +404,8 @@ a.card-media{text-decoration:none}
         return '<button class="own" type="button" data-i="' + i + '"><span class="own-media">' + logoHtml(item) + '</span>' +
           '<span class="own-body"><h3>' + esc(item ? item.name : x.product) + '</h3><span class="own-meta"><span>' +
           tierChip(x) + (x.date ? ' &middot; ' + esc(fmtDate(x.date)) : '') + '</span>' +
-          '<span class="pill' + (bad ? ' warn' : '') + '">' + esc(x.status) + '</span></span></span></button>';
+          '<span class="pill' + (bad ? ' warn' : '') + '">' + esc(x.status) + '</span></span>' +
+          (x.licence ? '<span class="own-key">Licence <code>' + esc(mask(x.licence)) + '</code></span>' : (bad ? '' : '<span class="own-key wait">Licence key: being issued\u2026</span>')) + '</span></button>';
       }).join('') + '</div>';
     } else {
       owned = '<div class="panel"><h2>You don&rsquo;t own any products yet</h2><p>Products you buy appear here automatically. Have a look at what the Guild builds.</p>' +
@@ -449,6 +468,7 @@ a.card-media{text-decoration:none}
       (x.amount ? '<dt>Paid</dt><dd>' + esc(x.amount) + '</dd>' : '') +
       (x.order ? '<dt>Order ID</dt><dd>' + esc(x.order) + '</dd>' : '') +
       '<dt>Status</dt><dd>' + esc(x.status) + '</dd></dl>' +
+      (!x.licence && !bad ? '<p class="agd-wait">Your licence key is being issued. This page updates by itself.</p>' : '') +
       (x.licence ? '<div class="agd-lic"><code id="agd-key" data-k="' + esc(x.licence) + '" data-hidden="1">' + esc(mask(x.licence)) + '</code>' +
         '<button class="btn btn-ghost" type="button" data-act="key-show">Reveal</button><button class="btn btn-ghost" type="button" data-act="key-copy">Copy</button></div>' : '') +
       '</div></div>';

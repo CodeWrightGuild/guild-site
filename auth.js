@@ -346,7 +346,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
 
   /* ───────── mount ───────── */
   function mount() {
-    var host = $('.nav-right');
+    var host = $('.nav-auth-slot') || $('.nav-right');
     if (!host) return;
     host.appendChild(slot);
     renderNav();

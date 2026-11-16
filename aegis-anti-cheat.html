@@ -150,6 +150,41 @@ main{gap:clamp(20px,5vw,80px);justify-content:space-between}
 @media (max-width:900px){main{flex-direction:column;justify-content:center;padding-top:84px;padding-bottom:40px}
   .hero-logo{order:-1;margin:0 auto;font-size:min(78vw,320px)}}
 @media (prefers-reduced-motion:reduce){.copy,.hero-logo{animation:none}}
+
+/* ===== checkout: a proper centred modal (was a 440px box) ===== */
+dialog.buy.paying{width:min(940px,96vw)}
+dialog.buy.paying .buy-wrap{padding:64px 6px 28px}
+dialog.buy.paying .checkout{max-width:none;margin:0;padding:26px 28px 30px;border-radius:20px;background:#0a0c10;border-color:#2a323d;box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 1px rgba(52,224,184,.06)}
+.checkout .back{background:none;border:0;color:#8d97a5;font:inherit;font-size:13.5px;cursor:pointer;padding:0 0 16px}
+.checkout .back:hover{color:#fff}
+.co-grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:32px;align-items:start}
+.co-sum{position:sticky;top:0;border:1px solid #1b222b;border-radius:14px;padding:18px 18px 8px;background:#07080a}
+.co-kick{display:block;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#34e0b8;margin-bottom:8px}
+.co-sum .sel{flex-direction:column;align-items:flex-start;gap:6px;border-bottom:0;margin-bottom:8px}
+.co-sum .total{margin:0 0 6px;padding-top:10px;border-top:1px solid #161b22;font-size:15px;color:#c9d1db}
+.co-main{min-width:0}
+.checkout #pp{width:100%;min-height:150px;margin-top:4px}
+.checkout #pp>div{width:100%}
+.checkout .msg:empty{display:none}
+.trk{list-style:none;margin:16px 0 4px;display:grid;gap:10px}
+.trk li{display:flex;gap:10px;align-items:center;color:#6f7a88;font-size:14.5px}
+.trk li i{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid #2a323d;display:grid;place-items:center;font-size:11px;font-style:normal;color:#05080b}
+.trk li.now{color:#eef2f7}
+.trk li.now i{border-color:#34e0b8;border-top-color:transparent;animation:trkspin .9s linear infinite}
+.trk li.done{color:#c9d1db}
+.trk li.done i{background:#34e0b8;border-color:#34e0b8}
+.trk li.bad{color:#ff9b7a}
+.trk li.bad i{background:#ff9b7a;border-color:#ff9b7a}
+@keyframes trkspin{to{transform:rotate(360deg)}}
+.lic{display:flex;gap:8px;align-items:stretch;margin:14px 0 6px}
+.lic code{flex:1;min-width:0;word-break:break-all;font-size:14.5px;padding:12px 14px;border-radius:10px;border:1px dashed #34e0b8;background:#07100e;color:#fff;letter-spacing:.04em}
+.lic button,.dashgo{font:inherit;font-weight:600;font-size:14px;padding:0 16px;border-radius:10px;border:1px solid #2a323d;background:transparent;color:#eef2f7;cursor:pointer}
+.lic button:hover{border-color:#9aa4b2}
+.dashgo{display:inline-block;margin-top:12px;padding:12px 18px;background:#eef2f7;color:#05080b;border-color:#eef2f7;text-decoration:none}
+@media (max-width:760px){.co-grid{grid-template-columns:1fr;gap:18px}.co-sum{position:static}dialog.buy.paying .checkout{padding:20px 16px 24px}}
+.checkout [hidden]{display:none!important}
+.checkout .msg a.dashgo{color:#05080b;text-decoration:none}
+.checkout .msg p{font-size:14.5px;line-height:1.55;color:#aab3bf;margin:12px 0 0}
 </style></head>
 <body>
 <script>var BEDROCK_BG=true;   /* true = animated Bedrock background, false = the original silk ribbon */
@@ -280,18 +315,25 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
     <div id="tiers" class="tiers"></div>
     <div id="checkout" class="checkout" hidden>
       <button class="back" type="button">&larr; Change tier</button>
-      <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
-      <label for="buyer-email">Your account (your licence is tied to this account; we email it to its verified address). You choose how to pay inside PayPal's own window, so your PayPal login does not have to match this email.</label>
-      <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in below">
-      <div id="g-wrap"><div id="g-btn"></div></div>
-      <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
-      <div id="cur-wrap"><label for="cur">Pay in</label><select id="cur"><option value="USD">USD</option></select></div>
-      <div class="total"><span id="tot-lab">Total (USD)</span><span id="sel-total"></span></div>
-      <button class="go" id="go" type="button">Continue to PayPal</button>
-      <div id="pp" hidden></div>
-      <button class="go alt" id="inv" type="button" hidden style="display:none">Email me a PayPal invoice instead</button>
-      <p class="fine">Sign-in is handled by Google (or Discord, GitHub or PayPal where offered), and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account.</p>
-      <p class="msg" id="msg" role="status"></p>
+      <div class="co-grid">
+        <aside class="co-sum">
+          <small class="co-kick">Your order</small>
+          <div class="sel"><span id="sel-name"></span><b id="sel-price"></b></div>
+          <div class="total"><span id="tot-lab">Total (USD)</span><span id="sel-total"></span></div>
+          <p class="fine">Sign-in is handled by Google (or Discord, GitHub or PayPal where offered), and payment by PayPal, so we never see your passwords or card details. Prices are set in USD and converted at live exchange rates (with a small conversion margin); PayPal shows the exact amount before you pay. Card payments are available at PayPal without a PayPal account.</p>
+        </aside>
+        <div class="co-main">
+          <label for="buyer-email">Your account (your licence is tied to this account; we email it to its verified address). You choose how to pay inside PayPal's own window, so your PayPal login does not have to match this email.</label>
+          <input id="buyer-email" type="email" readonly tabindex="-1" placeholder="Sign in below">
+          <div id="g-wrap"><div id="g-btn"></div></div>
+          <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
+          <div id="cur-wrap"><label for="cur">Pay in</label><select id="cur"><option value="USD">USD</option></select></div>
+          <button class="go" id="go" type="button">Continue to PayPal</button>
+          <div id="pp" hidden></div>
+          <button class="go alt" id="inv" type="button" hidden style="display:none">Email me a PayPal invoice instead</button>
+          <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
     </div>
   </div>
 </dialog>
@@ -455,7 +497,7 @@ function polyInit(card,t){
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
     list.appendChild(el); polyInit(el,t); });
-  function reset(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; curWrap.hidden=false; syncAuth();
+  function reset(){ stopTrack(); go.textContent='Continue to PayPal'; d.classList.remove('paying'); if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; curWrap.hidden=false; syncAuth();
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
     document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
@@ -466,7 +508,7 @@ function polyInit(card,t){
   function joinLink(){ return /^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)?'<br><a href="'+DISCORD_INVITE+'" target="_blank" rel="noopener" style="color:#34e0b8">Join our Discord</a> for support and updates.':''; }
   /* ---- Google sign-in (Google Identity Services). Google gives the browser a signed ID token (a JWT); the payment server verifies it and returns our own session + the verified email ---- */
   function completeLogin(prov,val){ msg.textContent='Signing you in\u2026';
-    payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})},'perks').then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(e){ msg.textContent=loginError(e); syncAuth(); }); }
+    payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})},'perks').then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); startPay(); }).catch(function(e){ msg.textContent=loginError(e); syncAuth(); }); }
   var gsiP=null, gsiInit=false;
   function loadGsi(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve();
     if(!gsiP) gsiP=new Promise(function(ok,no){ var sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true; sc.defer=true;
@@ -483,7 +525,7 @@ function polyInit(card,t){
     if(prov==='test'){ msg.textContent='Signing you in\u2026';   /* TEMPORARY sandbox test login: delete before going live */
       payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})},'perks')
       .then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); })
-      .then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); })
+      .then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); startPay(); })
       .catch(function(e){ msg.textContent=loginError(e); }); return; }
     try{ sessionStorage.setItem('aeg_state',st); sessionStorage.setItem('aeg_prov',prov); sessionStorage.setItem('aeg_tier',String(cur)); sessionStorage.setItem('aeg_cur',curSel.value); }catch(e){ msg.textContent='Your browser is blocking storage that sign-in needs. Allow it and try again.'; return; }
     if(prov==='discord') url='https://discord.com/oauth2/authorize?client_id='+encodeURIComponent(DISCORD_CLIENT_ID)+'&response_type=token&scope='+encodeURIComponent('identify email')+'&redirect_uri='+r+'&state='+st;
@@ -516,12 +558,12 @@ function polyInit(card,t){
     payFetch('/api/quote').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ Q=o.prices; var keep=curSel.value||CURRENCY, names=null; try{ names=new Intl.DisplayNames(undefined,{type:'currency'}); }catch(e){}
       curSel.innerHTML=''; Object.keys(Q).forEach(function(c){ var op=document.createElement('option'); op.value=c; var n=''; try{ n=names?names.of(c):''; }catch(e){} op.textContent=c+(n?' - '+n:''); curSel.appendChild(op); });
       var pick_=wantCur||keep; curSel.value=Q[pick_]?pick_:'USD'; wantCur=''; showPrice(); }).catch(function(){}); }
-  curSel.addEventListener('change',showPrice);
-  function finish(html){   /* hide the form, show the final message */
-    pp.innerHTML=''; pp.hidden=true; go.hidden=true; inv.hidden=true; gwrap.hidden=true; gout.hidden=true; curWrap.hidden=true;
+  curSel.addEventListener('change',function(){ showPrice(); if(cred&&btns){ closeBtns(); startPay(); } });
+  function closeBtns(){ if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; }
+  function hideForm(){ stopTrack(); pp.innerHTML=''; pp.hidden=true; go.hidden=true; inv.hidden=true; gwrap.hidden=true; gout.hidden=true; curWrap.hidden=true;
     document.querySelector('#checkout .sel').hidden=true; document.querySelector('#checkout .back').hidden=true;
-    document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true;
-    msg.innerHTML=html+joinLink(); }
+    document.querySelector('#checkout .total').hidden=true; document.querySelector('#checkout label').hidden=true; email.hidden=true; }
+  function finish(html){ hideForm(); msg.innerHTML=html+joinLink(); }
   function sdk(c){ var ns='pp'+c; if(window[ns]) return Promise.resolve(window[ns]);
     if(!sdkP[c]) sdkP[c]=new Promise(function(ok,no){ var sc=document.createElement('script');
       sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(PAYPAL_CLIENT_ID)+'&currency='+c+'&intent=capture'; sc.setAttribute('data-namespace',ns);
@@ -529,27 +571,71 @@ function polyInit(card,t){
     return sdkP[c]; }
   var cur=-1;
   function pick(i){ cur=i; var t=TIERS[i];
-    list.hidden=true; ttl.hidden=true; box.hidden=false; pp.innerHTML=''; pp.hidden=true; msg.innerHTML='';
+    list.hidden=true; ttl.hidden=true; box.hidden=false; d.classList.add('paying'); d.scrollTop=0; pp.innerHTML=''; pp.hidden=true; msg.innerHTML='';
     go.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; syncAuth(); if(!cred) showLogin();
     document.getElementById('sel-name').textContent='Aegis-Anti-Cheat \u2014 '+t.name+'';
-    loadQuote(); showPrice(); }
-  function startPay(){ var t=TIERS[cur], label='Aegis-Anti-Cheat \u2014 '+t.name+'', addr=email.value.trim();
+    loadQuote(); showPrice(); if(cred) startPay(); }
+  var JH={'Content-Type':'application/json'};
+  var PAID=/^(paid|complete|completed|captured|active|issued|licen[cs]ed|success)/i, FAILED=/(fail|denied|declin|cancel|refund|revers|void|expire|dispute)/i;
+  function setPending(o){ try{ if(o) localStorage.setItem('cw-pending',JSON.stringify(o)); else localStorage.removeItem('cw-pending'); }catch(e){} }
+  function pickLic(p){ return p&&(p.licence||p.license||p.licence_key||p.license_key||p.key)||''; }
+  /* The pay server owns the order: it records it when it is created, waits until PayPal says it is paid, then adds the licence key.
+     We ask it (POST /api/order-status); if that route does not exist yet we read /api/purchases and find the order there. */
+  function viaPurchases(id){
+    return payFetch('/api/purchases',{method:'POST',headers:JH,body:JSON.stringify({credential:cred})},'perks')
+      .then(function(r){ if(r.status===401) throw {auth:1}; if(!r.ok) throw {}; return r.json(); })
+      .then(function(o){ var l=o.purchases||[]; for(var i=l.length-1;i>=0;i--){ var q=l[i]; if(String(q.order||q.order_id||q.id||'')===id) return {status:q.status||'pending',licence:pickLic(q)}; } return {status:'pending',licence:''}; }); }
+  function checkOrder(id){
+    return payFetch('/api/order-status',{method:'POST',headers:JH,body:JSON.stringify({credential:cred,orderID:id})},'perks')
+      .then(function(r){ if(r.status===401) throw {auth:1}; if(r.status===404||r.status===405) return viaPurchases(id); if(!r.ok) throw {}; return r.json(); })
+      .then(function(o){ return {status:String(o.status||'pending'),licence:pickLic(o)}; }); }
+  var trk=null;
+  function stopTrack(){ if(trk){ clearTimeout(trk.t); trk.dead=true; trk=null; } }
+  function steps(a,b,c){ function li(st,txt){ return '<li class="'+st+'"><i>'+(st==='done'?'✓':st==='bad'?'!':'')+'</i><span>'+txt+'</span></li>'; }
+    return '<ul class="trk">'+li(a[0],a[1])+li(b[0],b[1])+li(c[0],c[1])+'</ul>'; }
+  function track(id,t,addr,captured){
+    stopTrack(); hideForm(); var T=trk={dead:false,t:0,n:0,t0:Date.now()}; setPending({order:id,tier:t.name,product:'Aegis-Anti-Cheat',ts:Date.now()});
+    function draw(stage,extra){
+      var head='<b style="color:#fff;font-size:18px">'+(stage===3?'You’re all set — thank you!':stage===9?'We could not confirm this payment':'Payment received — thank you!')+'</b><br>Order ID: '+esc(id)+' · Aegis-Anti-Cheat — '+esc(t.name);
+      var body=stage===9?steps(['done','Order sent to PayPal'],['bad','Payment could not be confirmed'],['','Licence issued'])
+        :steps(['done','Order sent to the Codewright server'],stage>=2?['done','Payment confirmed by PayPal']:['now','Waiting for PayPal to confirm your payment…'],stage>=3?['done','Licence issued']:stage>=2?['now','Adding your licence key…']:['','Licence issued']);
+      msg.innerHTML=head+body+(extra||'')+joinLink(); }
+    function done(lic){ setPending(null);
+      draw(3,(lic?'<div class="lic"><code id="lic-k">'+esc(lic)+'</code><button type="button" id="lic-c">Copy</button></div>':'')
+        +'<p>Your licence and perks are saved to your account'+(addr?' ('+esc(addr)+')':'')+'. We have also emailed the details.</p><a class="dashgo" href="dashboard.html">Open my dashboard &rarr;</a>');
+      var c=document.getElementById('lic-c'); if(c) c.addEventListener('click',function(){ (navigator.clipboard?navigator.clipboard.writeText(lic):Promise.reject()).then(function(){ c.textContent='Copied'; },function(){ c.textContent='Press Ctrl+C'; }); }); }
+    function tick(){ if(T.dead) return; T.n++; var late=Date.now()-T.t0>30*60*1000;
+      checkOrder(id).then(function(o){ if(T.dead) return;
+        if(FAILED.test(o.status)){ setPending(null); draw(9,'<p>You have not been charged for anything we could not deliver. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Order '+id)+'">email us</a> with the order ID above.</p>'); return; }
+        if(PAID.test(o.status)&&o.licence){ done(o.licence); return; }
+        if(PAID.test(o.status)){ draw(2); } else draw(1);
+        if(late){ draw(PAID.test(o.status)?2:1,'<p>This is taking longer than usual. You can close this window: the server keeps waiting and your licence will appear in your <a href="dashboard.html">dashboard</a> (and your inbox) as soon as it is ready.</p>'); return; }
+        T.t=setTimeout(tick,T.n<40?3000:10000); })
+      .catch(function(e){ if(T.dead) return; if(e&&e.auth){ draw(1,'<p>Your sign-in expired, but your order is safe. Sign in on the <a href="dashboard.html">dashboard</a> to see your licence.</p>'); return; }
+        T.t=setTimeout(tick,T.n<40?4000:10000); }); }
+    draw(1); tick(); }
+  /* PayPal Buttons open PayPal's own popup window; the form stays in this modal. */
+  function startPay(){ var t=TIERS[cur], addr=email.value.trim();
     if(!cred){ msg.textContent='Please sign in first.'; return; }
     if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
-    go.disabled=true; inv.disabled=true; msg.textContent='Loading secure checkout\u2026';
-    sdk(curSel.value).then(function(P){ msg.textContent=''; go.hidden=true; inv.hidden=true; gout.hidden=true; pp.hidden=false; curSel.disabled=true;
+    closeBtns(); go.disabled=true; inv.disabled=true; msg.textContent='Loading secure checkout…';
+    var myCur=curSel.value;
+    sdk(myCur).then(function(P){ if(myCur!==curSel.value||!cred) return; msg.textContent=''; go.hidden=true; inv.hidden=true; pp.innerHTML=''; pp.hidden=false;
       btns=P.Buttons({
-        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal',height:48,tagline:false},
         createOrder:function(data,a){
-          return payFetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
+          msg.textContent='';
+          return payFetch('/api/create-order',{method:'POST',headers:JH,body:JSON.stringify({product:'Aegis-Anti-Cheat',tier:t.name,credential:cred,currency:curSel.value})})
             .then(function(r){ if(r.status===401){ expired=true; throw new Error('signin'); } if(!r.ok) throw new Error('order'); return r.json(); }).then(function(o){ return o.id; }); },
         onApprove:function(data,a){
-          var cap=payFetch('/api/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID})})
-                .then(function(r){ if(!r.ok) throw new Error('capture'); return r.json(); }).then(function(o){ if(o.status!=='COMPLETED') throw new Error('status'); return {id:o.id||data.orderID}; });
-          return cap.then(function(o){
-            finish('<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+String(o.id).replace(/</g,'&lt;')+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your payment details, then your licence and next steps.'); }); },
+          var id=data.orderID;
+          /* ask the server to capture; whatever happens next the server is the one that records the order, so we just follow it until it is paid */
+          return payFetch('/api/capture-order',{method:'POST',headers:JH,body:JSON.stringify({orderID:id,credential:cred})})
+            .then(function(r){ return r.ok?r.json():{}; },function(){ return {}; })
+            .then(function(o){ track(String(o.id||id),t,addr,o.status==='COMPLETED'); }); },
         onCancel:function(){ msg.textContent='Payment cancelled. You have not been charged.'; },
-        onError:function(){ if(expired){ cred=''; syncAuth(); try{ btns.close(); }catch(e){} pp.innerHTML=''; pp.hidden=true; go.hidden=false; gout.hidden=true; showLogin(); msg.textContent='Your sign-in expired. Please sign in again.'; return; }
+        onError:function(){ if(expired){ cred=''; syncAuth(); closeBtns(); go.hidden=false; gout.hidden=true; showLogin(); msg.textContent='Your sign-in expired. Please sign in again.'; return; }
+          go.hidden=false; go.disabled=false; go.textContent='Try PayPal again';
           msg.innerHTML='Something went wrong with PayPal. You have not been charged. Please try again or <a href="mailto:hello@codewrightguild.com">email us</a>.'; }
       }); btns.render('#pp');
     }).catch(function(){ syncAuth(); go.hidden=false; inv.hidden=!OFFER_INVOICE; gout.hidden=false; msg.innerHTML='Could not load PayPal. Check your connection and try again.'; });
