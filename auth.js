@@ -5,7 +5,22 @@
   'use strict';
 
   /* ───────── CONFIG (same values as the Aegis checkout page) ───────── */
-  var API_BASE = 'https://wichita-publicly-textbooks-carolina.trycloudflare.com'; /* payment server, https, no trailing slash */
+  /* No fixed server address: tunnels.js reads tunnels.json (written by payserver) and picks a live tunnel. */
+  var me = document.currentScript;
+  var TUNNELS_SRC = me && me.src ? me.src.replace(/auth\.js(\?.*)?$/, 'tunnels.js') : 'tunnels.js';
+  var tunP = null;
+  function loadTunnels() {
+    if (window.Tunnels) return Promise.resolve();
+    if (!tunP) tunP = new Promise(function (ok, no) {
+      var sc = document.createElement('script');
+      sc.src = TUNNELS_SRC; sc.onload = ok; sc.onerror = function () { tunP = null; no(new Error('tunnels.js not found')); };
+      document.head.appendChild(sc);
+    });
+    return tunP;
+  }
+  function api(role, path, body) { return loadTunnels().then(function () { return Tunnels.fetch(role, path, body); }); }
+  loadTunnels().catch(function () {});
+
   var GOOGLE_CLIENT_ID = '373430665290-8ur1mmnvi6ei73ic3gsbmajm7eopgbb3.apps.googleusercontent.com';
   var STORE_KEY = 'cw-account';
 
@@ -160,10 +175,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
     if (!resp || !resp.credential) { setMsg('Google sign-in was cancelled.', true); return; }
     setMsg('Signing you in\u2026');
     var claims = jwtClaims(resp.credential);
-    fetch(API_BASE + '/api/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'google', value: resp.credential })
-    }).then(function (r) {
+    api('perks', '/api/login', { provider: 'google', value: resp.credential }).then(function (r) {
       if (!r.ok) { var e = new Error('http'); e.status = r.status; throw e; }
       return r.json();
     }).then(function (o) {
@@ -275,10 +287,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
   }
 
   function loadPurchases() {
-    return fetch(API_BASE + '/api/purchases', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential: acct.session })
-    }).then(function (r) {
+    return api('perks', '/api/purchases', { credential: acct.session }).then(function (r) {
       if (r.status === 401) { var e = new Error('expired'); e.expired = true; throw e; }
       if (r.status === 404) return { purchases: [], pending: true };  /* server endpoint not built yet */
       if (!r.ok) throw new Error('server');
