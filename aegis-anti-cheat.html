@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <script src="transitions.js"></script>
+<script src="tunnels.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Aegis-Anti-Cheat by Codewright Guild">
@@ -299,8 +300,22 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
    1) Paste your PayPal Client ID below (developer.paypal.com > Apps & Credentials). Sandbox ID to test, Live ID for real money.
    2) Edit TIERS / SPEED / FEATURES to change names, prices, detection times or the feature list.
       In FEATURES each row is [label, [4 values], optional [4 bracket tags], optional [4 hover explanations]]: use '✓' for included, '' for not included, or text. */
+
+/* Every server call goes through tunnels.js, which reads tunnels.json (payserver rewrites it each time the tunnels restart) and
+   tries each live address, so a stale hard-coded tunnel can no longer break sign-in or checkout. */
+function payFetch(path, opts, first){
+  var post = opts && opts.method === 'POST', body;
+  if(post){ try{ body = JSON.parse(opts.body); }catch(e){ body = {}; } }
+  var roles = first === 'perks' ? ['perks','pay'] : ['pay','perks'];          /* same server behind both lists: if one list has no live tunnel, use the other */
+  return Tunnels.fetch(roles[0], path, post ? body : undefined).catch(function(){ return Tunnels.fetch(roles[1], path, post ? body : undefined); });
+}
+function loginError(e){
+  if(window.console) console.error('[aegis] /api/login failed', e);
+  return e && e.status ? 'The server rejected the sign-in (error '+e.status+'). Make sure your account has a verified email, then try again.'
+                       : 'Can\u2019t reach the Codewright server right now (it may be offline or restarting). Please try again in a minute.';
+}
 var PAYPAL_CLIENT_ID='BAARB36opW9SaGlzZYwjdztTSLPklXMJF407iq2TGVrd1PfRC_DnX8V1tVGYejXEbgSH2ohDvz-2T_XHWE';   /* the Client ID is meant to be public; NEVER put your PayPal Secret in this file */
-var API_BASE='https://wichita-publicly-textbooks-carolina.trycloudflare.com';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
+var API_BASE='via tunnels.json';   /* your payment server's tunnel address, e.g. 'https://random-words.trycloudflare.com' (https, no trailing slash). Checkout stays switched off while this is empty. Prices are NOT set here: they live in payserver.c. The prices shown on this page are display only. */
 var GOOGLE_CLIENT_ID='373430665290-8ur1mmnvi6ei73ic3gsbmajm7eopgbb3.apps.googleusercontent.com';   /* console.cloud.google.com > APIs & Services > Credentials > Create credentials > OAuth client ID > Web application. The Client ID is public by design. NEVER put the Client Secret here (GIS does not need one in the browser). Under "Authorized JavaScript origins" add this site's origin exactly, e.g. https://yourname.github.io or https://codewrightguild.com (no path, no trailing slash). The same ID must be set as GOOGLE_CLIENT_ID on your payment server so it can check who the token was issued for. */
 var DISCORD_CLIENT_ID='YOUR_DISCORD_CLIENT_ID';   /* discord.com/developers/applications > your app > OAuth2 > Client ID. It is public by design. NEVER put the Client Secret here. Add this page's address under OAuth2 > Redirects. */
 var GITHUB_CLIENT_ID='YOUR_GITHUB_CLIENT_ID';   /* GitHub > Settings > Developer settings > OAuth Apps > Client ID. Public. The Client SECRET goes only in .env on your PC. */
@@ -451,7 +466,7 @@ function polyInit(card,t){
   function joinLink(){ return /^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(DISCORD_INVITE)?'<br><a href="'+DISCORD_INVITE+'" target="_blank" rel="noopener" style="color:#34e0b8">Join our Discord</a> for support and updates.':''; }
   /* ---- Google sign-in (Google Identity Services). Google gives the browser a signed ID token (a JWT); the payment server verifies it and returns our own session + the verified email ---- */
   function completeLogin(prov,val){ msg.textContent='Signing you in\u2026';
-    fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(){ msg.textContent='Sign-in failed. Make sure your account has a verified email, then try again.'; syncAuth(); }); }
+    payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:prov,value:val})},'perks').then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); }).then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); }).catch(function(e){ msg.textContent=loginError(e); syncAuth(); }); }
   var gsiP=null, gsiInit=false;
   function loadGsi(){ if(window.google&&google.accounts&&google.accounts.id) return Promise.resolve();
     if(!gsiP) gsiP=new Promise(function(ok,no){ var sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true; sc.defer=true;
@@ -466,10 +481,10 @@ function polyInit(card,t){
     }).catch(function(){ host.innerHTML='<p>Could not load Google sign-in. Check your connection or ad-blocker and try again.</p>'; }); }
   function startLogin(prov){ var st=rnd(), r=encodeURIComponent(redirectUri()), url;
     if(prov==='test'){ msg.textContent='Signing you in\u2026';   /* TEMPORARY sandbox test login: delete before going live */
-      fetch(API_BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})})
-      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})},'perks')
+      .then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); })
       .then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); })
-      .catch(function(){ msg.textContent='Test sign-in failed.'; }); return; }
+      .catch(function(e){ msg.textContent=loginError(e); }); return; }
     try{ sessionStorage.setItem('aeg_state',st); sessionStorage.setItem('aeg_prov',prov); sessionStorage.setItem('aeg_tier',String(cur)); sessionStorage.setItem('aeg_cur',curSel.value); }catch(e){ msg.textContent='Your browser is blocking storage that sign-in needs. Allow it and try again.'; return; }
     if(prov==='discord') url='https://discord.com/oauth2/authorize?client_id='+encodeURIComponent(DISCORD_CLIENT_ID)+'&response_type=token&scope='+encodeURIComponent('identify email')+'&redirect_uri='+r+'&state='+st;
     else if(prov==='github') url='https://github.com/login/oauth/authorize?client_id='+encodeURIComponent(GITHUB_CLIENT_ID)+'&scope='+encodeURIComponent('user:email')+'&redirect_uri='+r+'&state='+st;
@@ -498,7 +513,7 @@ function polyInit(card,t){
   function showPrice(){ var t=TIERS[cur]; if(!t) return; var c=curSel.value, a=Q&&Q[c]&&Q[c][t.name], txt=a?fmtc(a,c):money(t.price);
     selPrice.textContent=txt; selTotal.textContent=txt; totLab.textContent='Total ('+(a?c:'USD')+')'; }
   function loadQuote(){ if(Q||!API_BASE) return;
-    fetch(API_BASE+'/api/quote').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ Q=o.prices; var keep=curSel.value||CURRENCY, names=null; try{ names=new Intl.DisplayNames(undefined,{type:'currency'}); }catch(e){}
+    payFetch('/api/quote').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){ Q=o.prices; var keep=curSel.value||CURRENCY, names=null; try{ names=new Intl.DisplayNames(undefined,{type:'currency'}); }catch(e){}
       curSel.innerHTML=''; Object.keys(Q).forEach(function(c){ var op=document.createElement('option'); op.value=c; var n=''; try{ n=names?names.of(c):''; }catch(e){} op.textContent=c+(n?' - '+n:''); curSel.appendChild(op); });
       var pick_=wantCur||keep; curSel.value=Q[pick_]?pick_:'USD'; wantCur=''; showPrice(); }).catch(function(){}); }
   curSel.addEventListener('change',showPrice);
@@ -526,10 +541,10 @@ function polyInit(card,t){
       btns=P.Buttons({
         style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
         createOrder:function(data,a){
-          return fetch(API_BASE+'/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
+          return payFetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
             .then(function(r){ if(r.status===401){ expired=true; throw new Error('signin'); } if(!r.ok) throw new Error('order'); return r.json(); }).then(function(o){ return o.id; }); },
         onApprove:function(data,a){
-          var cap=fetch(API_BASE+'/api/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID})})
+          var cap=payFetch('/api/capture-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID})})
                 .then(function(r){ if(!r.ok) throw new Error('capture'); return r.json(); }).then(function(o){ if(o.status!=='COMPLETED') throw new Error('status'); return {id:o.id||data.orderID}; });
           return cap.then(function(o){
             finish('<b style="color:#fff;font-size:18px">Payment received \u2014 thank you!</b><br>Order ID: '+String(o.id).replace(/</g,'&lt;')+'<br>PayPal will email you a receipt, and Codewright Guild will email '+addr.replace(/</g,'&lt;')+' with your payment details, then your licence and next steps.'); }); },
@@ -543,7 +558,7 @@ function polyInit(card,t){
     if(!cred){ msg.textContent='Please sign in first.'; return; }
     if(PAYPAL_CLIENT_ID.indexOf('YOUR_')===0||!API_BASE){ msg.innerHTML='Online checkout is not switched on yet. Please <a href="mailto:hello@codewrightguild.com?subject='+encodeURIComponent('Aegis-Anti-Cheat '+t.name)+'">email us</a> to buy.'; return; }
     go.disabled=true; inv.disabled=true; msg.textContent='Sending your PayPal invoice\u2026';
-    fetch(API_BASE+'/api/request-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
+    payFetch('/api/request-invoice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tier:t.name,credential:cred,currency:curSel.value})})
       .then(function(r){ if(r.status===401){ cred=''; syncAuth(); showLogin(); throw new Error('signin'); } if(!r.ok) throw new Error('invoice'); return r.json(); })
       .then(function(o){ if(o.status!=='INVOICE_SENT') throw new Error('status');
         finish('<b style="color:#fff;font-size:18px">Invoice sent \u2014 check your email</b><br>PayPal has emailed an invoice for Aegis-Anti-Cheat \u2014 '+esc(t.name)+' to '+esc(addr)+'. Open it and pay on paypal.com (with PayPal, or by card without an account). Once it is paid we will email you the payment details, then your licence and next steps.'); })
