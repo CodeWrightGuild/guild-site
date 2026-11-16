@@ -44,23 +44,41 @@
   // a tunnel that is down answers with a Cloudflare error (502/504/52x) or not at all; our own server never sends those
   function tunnelDown(status) { return status === 502 || status === 504 || (status >= 520 && status <= 530); }
 
+  // a hung tunnel must not freeze sign-in: give up on each link after 8 s and try the next one
+  var TIMEOUT_MS = 8000;
+  function timedFetch(url, opts) {
+    if (typeof AbortController === 'undefined') return fetch(url, opts);
+    var ac = new AbortController();
+    var t = setTimeout(function () { ac.abort(); }, TIMEOUT_MS);
+    opts.signal = ac.signal;
+    return fetch(url, opts).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
+  }
+
   async function call(role, path, body) {
     var lastErr = new Error('no ' + role + ' tunnel available');
+    var tried = [];
     for (var round = 0; round < 2; round++) {
       var d = (round === 0 && data) ? data : await load();
       var list = shuffle((d && d[role]) || []);
       for (var i = 0; i < list.length; i++) {
         try {
-          var r = await fetch(list[i] + path, {
+          var opts = {
             method: body === undefined ? 'GET' : 'POST',
             headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body)
-          });
+          };
+          var r = await timedFetch(list[i] + path, opts);
           if (!tunnelDown(r.status)) return r;      // a real answer from payserver (even an error like 401): hand it back
           lastErr = new Error('tunnel down (' + r.status + ')');
-        } catch (e) { lastErr = e; }                // network error: try the next tunnel
+          tried.push(list[i] + ' -> HTTP ' + r.status);
+        } catch (e) {                               // network error, CORS block or timeout: try the next tunnel
+          lastErr = e;
+          tried.push(list[i] + ' -> ' + (e && e.name === 'AbortError' ? 'timed out' : 'network/CORS error'));
+        }
       }
     }
+    lastErr.tried = tried;
+    if (window.console) console.warn('[tunnels] every ' + role + ' tunnel failed:', tried.length ? tried : '(none listed in tunnels.json)');
     throw lastErr;
   }
 

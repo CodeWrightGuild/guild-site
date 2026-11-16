@@ -189,7 +189,10 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
         if (e && e.status) {
           setMsg('The server rejected the sign-in (error ' + e.status + '). Make sure your Google account has a verified email, then try again.', true);
         } else {
-          setMsg('Can\u2019t reach the Codewright server right now (it may be offline, or blocking this site). Please try again later.', true);
+          var none = e && e.tried && !e.tried.length;
+          setMsg(none
+            ? 'No Codewright server is listed right now. Please try again in a few minutes.'
+            : 'Can\u2019t reach the Codewright server right now (it may be offline, or blocking this site). Please try again later.', true);
         }
       });
   }
