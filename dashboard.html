@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>My dashboard</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#16181d; --muted:#5d6572; --line:#e2e5ea; --accent:#2f6fed; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --card:#181b21; --text:#e8eaee; --muted:#9aa3b2; --line:#2a2f38; --accent:#6c9bff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 24px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  h2 { font-size:1rem; margin:0 0 10px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--line); flex-wrap:wrap; }
+  .row:first-of-type { border-top:0; }
+  .k { color:var(--muted); }
+  .v { font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; }
+  .empty, .msg { color:var(--muted); }
+  a { color:var(--accent); }
+  button { font:inherit; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:6px 12px; cursor:pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>My dashboard</h1>
+  <p class="sub" id="who">Loading…</p>
+  <section><h2>My purchases</h2><div id="purchases" class="msg">Loading…</div></section>
+  <section><h2>My perks</h2><div id="perks" class="msg">Loading…</div></section>
+</main>
+
+<script src="tunnels.js"></script>
+<script>
+/* ---- EDIT THESE TWO to match how your sign-in (auth.js) stores the session ticket that /api/login returned ---- */
+var LOGIN_PAGE = 'index.html';
+function getSession() {
+  try { return sessionStorage.getItem('session') || localStorage.getItem('session') || ''; } catch (e) { return ''; }
+}
+/* ------------------------------------------------------------------------------------------------------------- */
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }   // textContent only: nothing from the server is ever run as HTML
+function fill(id, rows, emptyText) {
+  var box = document.getElementById(id); box.textContent = ''; box.className = '';
+  if (!rows.length) { box.className = 'empty'; box.textContent = emptyText; return; }
+  rows.forEach(function (r) { var row = el('div', 'row'); row.appendChild(el('span', 'k', r[0])); row.appendChild(el('span', 'v', r[1])); box.appendChild(row); });
+}
+function needSignIn() {
+  var w = document.getElementById('who'); w.textContent = '';
+  w.appendChild(document.createTextNode('Please '));
+  var a = el('a', '', 'sign in'); a.href = LOGIN_PAGE; w.appendChild(a); w.appendChild(document.createTextNode(' first. Your session may have expired.'));
+  document.getElementById('purchases').textContent = ''; document.getElementById('perks').textContent = '';
+}
+
+(async function () {
+  var credential = getSession();
+  if (!credential) { needSignIn(); return; }
+  try {
+    var res = await Promise.all([
+      Tunnels.fetch('perks', '/api/purchases', { credential: credential }),
+      Tunnels.fetch('perks', '/api/perks', { credential: credential })
+    ]);
+    if (res[0].status === 401 || res[1].status === 401) { needSignIn(); return; }
+    var p = await res[0].json(), k = await res[1].json();
+    document.getElementById('who').textContent = 'Only you can see this page. It loads your own data when you are signed in.';
+    fill('purchases', (p.purchases || []).map(function (x) { return [x.date + '  ·  ' + x.tier, x.amount + '  ·  order ' + x.order]; }), 'No purchases yet.');
+    fill('perks', (k.perks || []).map(function (x) { return [x.name, x.value]; }), 'No perks on your account yet.');
+  } catch (e) {
+    document.getElementById('who').textContent = 'Could not reach the server right now. Try again in a minute.';
+    document.getElementById('purchases').textContent = ''; document.getElementById('perks').textContent = '';
+  }
+})();
+</script>
+</body>
+</html>
