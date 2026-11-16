@@ -269,6 +269,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       tier: p.tier || p.plan || '',
       date: p.date || p.purchased_at || p.created || '',
       order: p.order || p.order_id || p.id || '',
+      amount: p.amount || '',
       status: p.status || 'paid'
     };
   }
@@ -282,7 +283,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       if (r.status === 404) return { purchases: [], pending: true };  /* server endpoint not built yet */
       if (!r.ok) throw new Error('server');
       return r.json();
-    }).then(function (o) { return { list: (o.purchases || []).map(normalise), pending: !!o.pending }; });
+    }).then(function (o) { return { list: (o.purchases || []).map(normalise).reverse(), pending: !!o.pending }; });
   }
 
   function renderProducts() {
@@ -318,6 +319,7 @@ dialog.cw-dlg::backdrop{background:rgba(2,10,6,.62);backdrop-filter:blur(6px)}\
       '<dl class="cw-kv">' +
       (x.tier ? '<dt>Tier</dt><dd>' + esc(x.tier) + '</dd>' : '') +
       (x.date ? '<dt>Purchased</dt><dd>' + esc(x.date) + '</dd>' : '') +
+      (x.amount ? '<dt>Paid</dt><dd>' + esc(x.amount) + '</dd>' : '') +
       (x.order ? '<dt>Order ID</dt><dd>' + esc(x.order) + '</dd>' : '') +
       '<dt>Status</dt><dd>' + esc(x.status) + '</dd></dl>' +
       '<div class="cw-soon">Feature list and licence details coming soon.</div>';
