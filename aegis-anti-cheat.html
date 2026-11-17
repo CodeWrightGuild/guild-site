@@ -328,7 +328,7 @@ var STATS_DEFAULT={updated:'',note:'',strengths:[{label:'Strength 2',rows:[{name
           <div id="g-wrap"><div id="g-btn"></div></div>
           <button class="out" id="g-out" type="button" hidden>Not you? Use a different account</button>
           <div id="cur-wrap"><label for="cur">Pay in</label><select id="cur"><option value="USD">USD</option></select></div>
-          <button class="go" id="go" type="button">Continue to PayPal</button>
+          <button class="go" id="go" type="button">Pay with PayPal</button>
           <div id="pp" hidden></div>
           <button class="go alt" id="inv" type="button" hidden style="display:none">Email me a PayPal invoice instead</button>
           <p class="msg" id="msg" role="status" aria-live="polite"></p>
@@ -497,7 +497,7 @@ function polyInit(card,t){
       +'<small>'+esc(t.tagline)+'</small><h3>'+esc(t.name)+'</h3><div class="price">'+money(t.price)+'</div>'
       +'<ul class="rows">'+rows+'</ul><button class="pick" type="button" data-i="'+i+'">Choose '+esc(t.name)+'</button>';
     list.appendChild(el); polyInit(el,t); });
-  function reset(){ stopTrack(); go.textContent='Continue to PayPal'; d.classList.remove('paying'); if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; curWrap.hidden=false; syncAuth();
+  function reset(){ stopTrack(); go.textContent='Pay with PayPal'; d.classList.remove('paying'); if(btns&&btns.close){ try{btns.close();}catch(e){} } btns=null; pp.innerHTML=''; pp.hidden=true; msg.innerHTML=''; go.hidden=false; email.hidden=false; inv.hidden=!OFFER_INVOICE; gwrap.hidden=false; curWrap.hidden=false; syncAuth();
     ['label','.total'].forEach(function(q){ document.querySelector('#checkout '+q).hidden=false; });
     box.hidden=true; list.hidden=false; ttl.hidden=false;
     document.querySelector('#checkout .sel').hidden=false; document.querySelector('#checkout .back').hidden=false; }
@@ -602,7 +602,7 @@ function polyInit(card,t){
       msg.innerHTML=head+body+(extra||'')+joinLink(); }
     function done(lic){ setPending(null);
       draw(3,(lic?'<div class="lic"><code id="lic-k">'+esc(lic)+'</code><button type="button" id="lic-c">Copy</button></div>':'')
-        +'<p>Your licence and perks are saved to your account'+(addr?' ('+esc(addr)+')':'')+'. We have also emailed the details.</p><a class="dashgo" href="dashboard.html">Open my dashboard &rarr;</a>');
+        +'<p>Your licence and perks are saved to your account'+(addr?' ('+esc(addr)+')':'')+'. Your licence is saved to your account and will appear on your dashboard immediately.</p><a class="dashgo" href="dashboard.html">Open my dashboard &rarr;</a>');
       var c=document.getElementById('lic-c'); if(c) c.addEventListener('click',function(){ (navigator.clipboard?navigator.clipboard.writeText(lic):Promise.reject()).then(function(){ c.textContent='Copied'; },function(){ c.textContent='Press Ctrl+C'; }); }); }
     function tick(){ if(T.dead) return; T.n++; var late=Date.now()-T.t0>30*60*1000;
       checkOrder(id).then(function(o){ if(T.dead) return;
