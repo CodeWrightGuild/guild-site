@@ -522,11 +522,6 @@ function polyInit(card,t){
       google.accounts.id.renderButton(host,{type:'standard',theme:'filled_black',size:'large',text:'continue_with',shape:'rectangular',logo_alignment:'left',width:w});
     }).catch(function(){ host.innerHTML='<p>Could not load Google sign-in. Check your connection or ad-blocker and try again.</p>'; }); }
   function startLogin(prov){ var st=rnd(), r=encodeURIComponent(redirectUri()), url;
-    if(prov==='test'){ msg.textContent='Signing you in\u2026';   /* TEMPORARY sandbox test login: delete before going live */
-      payFetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'test',value:'sandbox-test-login-1234567890'})},'perks')
-      .then(function(r){ if(!r.ok) throw {status:r.status}; return r.json(); })
-      .then(function(o){ cred=o.session; email.value=o.email; msg.textContent=''; syncAuth(); startPay(); })
-      .catch(function(e){ msg.textContent=loginError(e); }); return; }
     try{ sessionStorage.setItem('aeg_state',st); sessionStorage.setItem('aeg_prov',prov); sessionStorage.setItem('aeg_tier',String(cur)); sessionStorage.setItem('aeg_cur',curSel.value); }catch(e){ msg.textContent='Your browser is blocking storage that sign-in needs. Allow it and try again.'; return; }
     if(prov==='discord') url='https://discord.com/oauth2/authorize?client_id='+encodeURIComponent(DISCORD_CLIENT_ID)+'&response_type=token&scope='+encodeURIComponent('identify email')+'&redirect_uri='+r+'&state='+st;
     else if(prov==='github') url='https://github.com/login/oauth/authorize?client_id='+encodeURIComponent(GITHUB_CLIENT_ID)+'&scope='+encodeURIComponent('user:email')+'&redirect_uri='+r+'&state='+st;
@@ -537,7 +532,7 @@ function polyInit(card,t){
     if(DISCORD_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['discord','Continue with Discord','#5865F2']);
     if(GITHUB_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['github','Continue with GitHub','#24292f']);
     if(PAYPAL_LOGIN&&PAYPAL_CLIENT_ID.indexOf('YOUR_')!==0) opts.push(['paypal','Continue with PayPal','#0070ba']);
-    if(PAYPAL_MODE==='sandbox') opts.push(['test','Test sign-in (sandbox only)','#6b7280']);   /* TEMPORARY: delete before going live */
+   
     if(!opts.length&&!gOn){ gbtn.innerHTML='<p>Sign-in is not switched on yet.</p>'; return; }
     opts.forEach(function(o){ var b=document.createElement('button'); b.type='button'; b.className='go'; b.style.cssText='background:'+o[2]+';color:#fff;border-color:'+o[2]+';margin:0 0 8px'; b.textContent=o[1]; b.addEventListener('click',function(){ startLogin(o[0]); }); gbtn.appendChild(b); }); }
   gout.addEventListener('click',function(){ cred=''; email.value=''; try{ if(window.google&&google.accounts&&google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){} syncAuth(); showLogin(); });
